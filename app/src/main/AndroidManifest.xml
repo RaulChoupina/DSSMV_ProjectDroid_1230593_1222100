@@ -28,16 +28,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!--
 
-        <!-- Login de administrador -->
-        <activity
+      <activity
                 android:name=".AdminLoginActivity"
                 android:exported="false" />
 
-        <!-- Dashboard do administrador -->
+
         <activity
                 android:name=".AdminDashboardActivity"
                 android:exported="false" />
+        -->
+        <activity
+                android:name=".RegisterActivity"
+                  android:exported="false"/>
 
     </application>
 </manifest>

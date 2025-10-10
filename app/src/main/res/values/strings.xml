@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">DSSMV_ProjectDroid_1230593_1222100_1</string>
+    <string name="app_name">DSSMV_ProjectDroid_1230593_1222100</string>
+    <string name="main_title">Bem-vindo à Biblioteca</string>
+    <string name="login_title">Entrar na Biblioteca</string>
+    <string name="register_title">Criar Conta</string>
+    <string name="name_hint">Nome</string>
+    <string name="confirm_password_hint">Confirmar palavra-passe</string>
+    <string name="register_button">Registar</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Palavra-passe</string>
+    <string name="login_button">Login</string>
+    <string name="register_link">Não tem conta? Registar-se</string>
+
+
 </resources>
