@@ -9,7 +9,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class AdminLoginActivity extends AppCompatActivity {
+
+    public class AdminDashboardActivity extends AppCompatActivity {
 
     private static final String ADMIN_EMAIL = "admin1@gmail.com";
     private static final String ADMIN_PASS  = "1234";
@@ -21,7 +22,8 @@ public class AdminLoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_admin_login);
+        setContentView(R.layout.activity_admin_dashboard);
+
 
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
