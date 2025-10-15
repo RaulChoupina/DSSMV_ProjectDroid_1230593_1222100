@@ -10,6 +10,13 @@
     <string name="password_hint">Palavra-passe</string>
     <string name="login_button">Login</string>
     <string name="register_link">Não tem conta? Registar-se</string>
+    <string name="admin_title">Admin • Gerir Livros</string>
+    <string name="hint_library_id">Library ID (UUID)</string>
+    <string name="hint_isbn">ISBN</string>
+    <string name="hint_stock">Stock</string>
+    <string name="btn_add_update">Adicionar / Atualizar</string>
+    <string name="btn_remove">Retirar (stock=0)</string>
+
 
 
 </resources>
