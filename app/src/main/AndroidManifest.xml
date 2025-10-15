@@ -40,7 +40,7 @@
                 android:exported="false" />
         -->
         <activity
-                android:name=".RegisterActivity"
+                android:name=".LoginActivity"
                   android:exported="false"/>
 
     </application>

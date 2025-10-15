@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnLogin.setOnClickListener(v -> doLogin());
         tvRegister.setOnClickListener(v ->
-                startActivity(new Intent(this, RegisterActivity.class)) // criaremos esta Activity
+                startActivity(new Intent(this, LoginActivity.class)) // criaremos esta Activity
         );
     }
 
