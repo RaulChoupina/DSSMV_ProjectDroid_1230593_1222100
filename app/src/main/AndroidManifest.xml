@@ -3,7 +3,6 @@
           xmlns:tools="http://schemas.android.com/tools"
           package="com.example.projdroid">
 
-    <!-- Permissões necessárias -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -19,7 +18,6 @@
             android:usesCleartextTraffic="true"
             android:networkSecurityConfig="@xml/network_security_config">
 
-        <!-- Página inicial -->
         <activity
                 android:name=".MainActivity"
                 android:exported="true">
@@ -29,19 +27,21 @@
             </intent-filter>
         </activity>
 
-
-      <activity
+        <activity
                 android:name=".AdminLoginActivity"
                 android:exported="false" />
-
 
         <activity
                 android:name=".AdminDashboardActivity"
                 android:exported="false" />
 
         <activity
+                android:name=".viewmodel.ClientHomeActivity"
+                android:exported="false" />
+
+        <activity
                 android:name=".RegisterActivity"
-                  android:exported="false"/>
+                android:exported="false" />
 
     </application>
 </manifest>
