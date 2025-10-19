@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnLogin.setOnClickListener(v -> doLogin());
         tvRegister.setOnClickListener(v ->
-                startActivity(new Intent(this, LoginActivity.class)) // criaremos esta Activity
+                startActivity(new Intent(this, RegisterActivity.class)) // criaremos esta Activity
         );
     }
 
@@ -48,12 +48,20 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // TODO: quando tiveres endpoint de autenticação, chama-o aqui com Retrofit
-        // Por agora só simula sucesso
-        show("Login efetuado (simulado).");
-        // startActivity(new Intent(this, ClientHomeActivity.class));
+        // ADMIN → abrir dashboard
+        if (email.equalsIgnoreCase("admin1@gmail.com") && pass.equals("1234")) {
+            show("Login admin OK. A abrir o dashboard…");
+            startActivity(new Intent(this, AdminDashboardActivity.class));
+            // finish(); // opcional: fecha o ecrã de login
+            return;
+        }
+
+        // CLIENTE (por agora, qualquer email válido + password não vazia)
+        show("Login cliente OK.");
+        // startActivity(new Intent(this, ClientHomeActivity.class)); // se/ quando criares
         // finish();
     }
+
 
     private String safeText(TextInputEditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();

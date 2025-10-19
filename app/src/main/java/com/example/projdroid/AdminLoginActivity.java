@@ -21,7 +21,7 @@ public class AdminLoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // 👉 este layout TEM os IDs edtEmail, edtPassword, btnLogin
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_register);
 
         edtEmail   = findViewById(R.id.edtEmail);
         edtPassword= findViewById(R.id.edtPassword);

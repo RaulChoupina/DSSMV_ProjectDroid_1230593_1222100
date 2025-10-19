@@ -19,7 +19,7 @@
     <EditText
             android:id="@+id/edtLibraryId"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="@string/hint_library_id"
             android:inputType="text"
             app:layout_constraintTop_toBottomOf="@id/tvTitleAdmin"
@@ -30,7 +30,7 @@
     <EditText
             android:id="@+id/edtIsbn"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="@string/hint_isbn"
             android:inputType="text"
             app:layout_constraintTop_toBottomOf="@id/edtLibraryId"
@@ -41,7 +41,7 @@
     <EditText
             android:id="@+id/edtStock"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="@string/hint_stock"
             android:inputType="number"
             app:layout_constraintTop_toBottomOf="@id/edtIsbn"
