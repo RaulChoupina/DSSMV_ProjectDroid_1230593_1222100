@@ -9,7 +9,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.projdroid.data.ClientData;
-import com.example.projdroid.viewmodel.ClientHomeActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -62,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // CLIENTE predefinido
-        if (ClientData.validar(email, pass)) {
+        if (ClientData.validar(this,email, pass)) {
             show("Login cliente OK.");
             Intent i = new Intent(this, ClientHomeActivity.class);
             i.putExtra("cliente_email", email);

@@ -36,12 +36,22 @@
                 android:exported="false" />
 
         <activity
-                android:name=".viewmodel.ClientHomeActivity"
+                android:name=".ClientHomeActivity"
                 android:exported="false" />
 
         <activity
                 android:name=".RegisterActivity"
                 android:exported="false" />
+
+        <activity android:name=".SearchBooksActivity"
+                  android:exported="false"/>
+
+        <activity android:name=".MyReserveActivity"
+                  android:exported="false"/>
+
+        <activity android:name=".ReserveHistoryActivity"
+                  android:exported="false"/>
+
 
     </application>
 </manifest>

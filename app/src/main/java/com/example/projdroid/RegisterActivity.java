@@ -1,70 +1,39 @@
+// RegisterActivity.java
 package com.example.projdroid;
 
 import android.os.Bundle;
 import android.util.Patterns;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputEditText;
+import com.example.projdroid.data.ClientData;
 
 public class RegisterActivity extends AppCompatActivity {
+    private EditText edtEmail, edtPass, edtPass2;
 
-    private TextInputEditText edtName, edtEmail, edtPassword, edtConfirmPassword;
-    private MaterialButton btnRegister;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        edtName            = findViewById(R.id.edtName);
-        edtEmail           = findViewById(R.id.edtEmail);
-        edtPassword        = findViewById(R.id.edtPassword);
-        edtConfirmPassword = findViewById(R.id.edtConfirmPassword);
-        btnRegister        = findViewById(R.id.btnRegister);
+        edtEmail = findViewById(R.id.edtEmail);
+        edtPass  = findViewById(R.id.edtPassword);
+        edtPass2 = findViewById(R.id.edtConfirmPassword);
+        Button btn = findViewById(R.id.btnRegister);
 
-        btnRegister.setOnClickListener(v -> doRegister());
+        btn.setOnClickListener(v -> {
+            String email = t(edtEmail).toLowerCase().trim();
+            String p1 = t(edtPass);
+            String p2 = t(edtPass2);
+
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { msg("Email inválido"); return; }
+            if (p1.isEmpty() || !p1.equals(p2)) { msg("Passwords não coincidem"); return; }
+
+            boolean ok = ClientData.registar(this, email, p1);
+            if (ok) { msg("Conta criada!"); finish(); }
+            else    { msg("Já existe uma conta com esse email."); }
+        });
     }
-
-    private void doRegister() {
-        String name  = safeText(edtName);
-        String email = safeText(edtEmail);
-        String pass  = safeText(edtPassword);
-        String confirm = safeText(edtConfirmPassword);
-
-        if (name.isEmpty()) {
-            show("O nome é obrigatório.");
-            return;
-        }
-        if (!isValidEmail(email)) {
-            show("Insere um email válido.");
-            return;
-        }
-        if (pass.isEmpty()) {
-            show("A palavra-passe é obrigatória.");
-            return;
-        }
-        if (!pass.equals(confirm)) {
-            show("As palavras-passe não coincidem.");
-            return;
-        }
-
-        // TODO: Fazer chamada Retrofit quando o endpoint de registo estiver disponível
-        show("Conta criada com sucesso (simulado).");
-        finish();
-    }
-
-    private String safeText(TextInputEditText et) {
-        return et.getText() == null ? "" : et.getText().toString().trim();
-    }
-
-    private boolean isValidEmail(String email) {
-        return !email.isEmpty() && Patterns.EMAIL_ADDRESS.matcher(email).matches();
-    }
-
-    private void show(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
+    private String t(EditText e){ return e.getText()==null? "": e.getText().toString(); }
+    private void msg(String s){ Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }
 }

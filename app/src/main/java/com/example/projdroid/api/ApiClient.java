@@ -7,7 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class ApiClient {
     private static Retrofit retrofit;
-    private static final String BASE_URL = "https://193.136.62.24/";
+    private static final String BASE_URL = "http://193.136.62.24/";
+
 
     public static Retrofit get() {
         if (retrofit == null) {
@@ -22,6 +23,20 @@ public final class ApiClient {
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
+        HttpLoggingInterceptor log = new HttpLoggingInterceptor();
+        log.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(log)
+                .build();
+
+        retrofit = new Retrofit.Builder()
+                .baseUrl("http://193.136.62.24/") // atenção à slash final
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
         return retrofit;
+
     }
 }
