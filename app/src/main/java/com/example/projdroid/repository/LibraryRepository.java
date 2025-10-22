@@ -1,33 +1,23 @@
 package com.example.projdroid.repository;
 
-import com.example.projdroid.api.ApiClient;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.models.Book;
-import com.example.projdroid.models.CheckedOutBook;
-import com.example.projdroid.models.CreateReviewRequest;
 import com.example.projdroid.models.Library;
 import com.example.projdroid.models.LibraryBook;
-import com.example.projdroid.models.Review;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import retrofit2.Call;
 import retrofit2.Response;
 
-/**
- * Repositório de acesso à API da Biblioteca.
- * - Pesquisa com fallback (query->q)
- * - smartSearch: se pesquisa vier vazia, mostra livros da 1ª biblioteca
- */
 public class LibraryRepository {
 
     private final LibraryApi api = ApiClient.get().create(LibraryApi.class);
 
-    public interface Callback<T> {
-        void onSuccess(T data);
-        void onError(Throwable t);
-    }
+    public interface Callback<T> { void onSuccess(T data); void onError(Throwable t); }
 
     // ---------- Libraries ----------
     public void getLibraries(Callback<List<Library>> cb) {
@@ -50,7 +40,7 @@ public class LibraryRepository {
         });
     }
 
-    // (Opcional) obter livro por ISBN
+    // (opcional) obter livro por ISBN
     public void getBookByIsbn(String isbn, boolean persist, Callback<Book> cb) {
         api.getBookByIsbn(isbn, persist).enqueue(new retrofit2.Callback<Book>() {
             @Override public void onResponse(Call<Book> c, Response<Book> r) {
@@ -63,59 +53,83 @@ public class LibraryRepository {
 
     // ---------- Search ----------
     /**
-     * Pesquisa com fallback:
-     * 1) tenta /v1/search?query=...
-     * 2) se vazio, tenta /v1/search?q=...
+     * Pesquisa para a UI:
+     * 1) Usa /v1/search/typeahead (devolve strings — tipicamente ISBNs ou termos).
+     * 2) Para cada item, tenta obter o Book completo via /v1/book/{isbn}.
+     * 3) Devolve List<Book> à UI (evita o erro "Expected BEGIN_OBJECT but was STRING").
      */
-    public void searchBooks(String query, Integer page, Callback<List<Book>> cb) {
-        if (page == null) page = 0;
-        api.searchBooksQuery(query, page).enqueue(new retrofit2.Callback<List<Book>>() {
-            @Override public void onResponse(Call<List<Book>> c, Response<List<Book>> r) {
-                if (r.isSuccessful() && r.body() != null) cb.onSuccess(r.body());
-                else cb.onError(new Exception("HTTP " + r.code()));
+    public void search(String query, Callback<List<Book>> cb) {
+        final String q = (query == null) ? "" : query.trim();
+        api.typeahead(q).enqueue(new retrofit2.Callback<List<String>>() {
+            @Override public void onResponse(Call<List<String>> c, Response<List<String>> r) {
+                if (!r.isSuccessful() || r.body() == null) {
+                    cb.onError(new Exception("HTTP " + r.code()));
+                    return;
+                }
+
+                List<String> hits = r.body();
+                if (hits.isEmpty()) { cb.onSuccess(Collections.emptyList()); return; }
+
+                // Limita para não saturar a UI/servidor (ajusta se quiseres)
+                int max = Math.min(10, hits.size());
+                List<Book> results = Collections.synchronizedList(new ArrayList<>());
+                AtomicInteger remaining = new AtomicInteger(max);
+
+                for (int i = 0; i < max; i++) {
+                    String token = hits.get(i);
+                    if (token == null || token.trim().isEmpty()) {
+                        if (remaining.decrementAndGet() == 0) cb.onSuccess(results);
+                        continue;
+                    }
+
+                    // Tentamos tratar "token" como ISBN diretamente:
+                    getBookByIsbn(token.trim(), false, new Callback<Book>() {
+                        @Override public void onSuccess(Book book) {
+                            if (book != null) results.add(book);
+                            if (remaining.decrementAndGet() == 0) cb.onSuccess(results);
+                        }
+                        @Override public void onError(Throwable t) {
+                            // Se falhar por o token não ser um ISBN válido, simplesmente ignoramos esse item
+                            if (remaining.decrementAndGet() == 0) cb.onSuccess(results);
+                        }
+                    });
+                }
             }
-            @Override public void onFailure(Call<List<Book>> c, Throwable t) { cb.onError(t); }
+
+            @Override public void onFailure(Call<List<String>> c, Throwable t) { cb.onError(t); }
         });
     }
 
+    /** Se quiseres pesquisar só dentro de uma biblioteca (sem usar /v1/search): */
+    public void searchBooksInLibrary(String libraryId, String query, Callback<List<Book>> cb) {
+        final String q = query == null ? "" : query.trim().toLowerCase();
 
+        getBooks(libraryId, new Callback<List<LibraryBook>>() {
+            @Override public void onSuccess(List<LibraryBook> lbs) {
+                List<Book> result = new ArrayList<>();
+                if (lbs != null) {
+                    for (LibraryBook lb : lbs) {
+                        if (lb == null || lb.book == null) continue;
+                        Book b = lb.book;
 
-    /**
-     * smartSearch:
-     * - tenta pesquisa (query->q)
-     * - se vier vazia, carrega livros da 1ª biblioteca
-     */
-    public void smartSearch(String query, Integer page, Callback<List<Book>> cb) {
-        searchBooks(query, page, new Callback<List<Book>>() {
-            @Override public void onSuccess(List<Book> data) {
-                if (data != null && !data.isEmpty()) { cb.onSuccess(data); return; }
+                        String title  = b.title == null ? "" : b.title.toLowerCase();
+                        String isbn   = b.isbn  == null ? "" : b.isbn.toLowerCase();
 
-                // Fallback: livros da 1ª biblioteca
-                getLibraries(new Callback<List<Library>>() {
-                    @Override public void onSuccess(List<Library> libs) {
-                        if (libs == null || libs.isEmpty()) { cb.onError(new Exception("Sem bibliotecas")); return; }
-
-                        Library first = libs.get(0);
-                        if (first == null || first.id == null || first.id.isEmpty()) {
-                            cb.onError(new Exception("Library.id inválido")); return;
+                        String author = "";
+                        if (b.authors != null && !b.authors.isEmpty() && b.authors.get(0) != null) {
+                            // ajusta o campo conforme o teu modelo Author
+                            author = b.authors.get(0).name == null ? "" : b.authors.get(0).name.toLowerCase();
                         }
 
-                        getBooks(first.id, new Callback<List<LibraryBook>>() {
-                            @Override public void onSuccess(List<LibraryBook> lbs) {
-                                ArrayList<Book> out = new ArrayList<>();
-                                if (lbs != null) for (LibraryBook lb : lbs) if (lb != null && lb.book != null) out.add(lb.book);
-                                cb.onSuccess(out);
-                            }
-                            @Override public void onError(Throwable t) { cb.onError(t); }
-                        });
+                        boolean matches = q.isEmpty() || title.contains(q) || isbn.contains(q) || author.contains(q);
+                        if (matches) result.add(b);
                     }
-                    @Override public void onError(Throwable t) { cb.onError(t); }
-                });
+                }
+                cb.onSuccess(result);
             }
             @Override public void onError(Throwable t) { cb.onError(t); }
         });
     }
-
 
     // ---------- Reviews ----------
     public void getReviews(String isbn, Integer limit, Callback<List<Review>> cb) {
@@ -156,27 +170,6 @@ public class LibraryRepository {
                 else cb.onError(new Exception("HTTP " + r.code()));
             }
             @Override public void onFailure(Call<List<CheckedOutBook>> c, Throwable t) { cb.onError(t); }
-        });
-    }
-
-    // ---------- Checkout / Checkin (já prontos a usar) ----------
-    public void checkout(String libraryId, String bookId, String userId, Callback<Void> cb) {
-        api.checkout(libraryId, bookId, userId).enqueue(new retrofit2.Callback<Void>() {
-            @Override public void onResponse(Call<Void> c, Response<Void> r) {
-                if (r.isSuccessful()) cb.onSuccess(null);
-                else cb.onError(new Exception("HTTP " + r.code()));
-            }
-            @Override public void onFailure(Call<Void> c, Throwable t) { cb.onError(t); }
-        });
-    }
-
-    public void checkin(String libraryId, String bookId, String userId, Callback<Void> cb) {
-        api.checkin(libraryId, bookId, userId).enqueue(new retrofit2.Callback<Void>() {
-            @Override public void onResponse(Call<Void> c, Response<Void> r) {
-                if (r.isSuccessful()) cb.onSuccess(null);
-                else cb.onError(new Exception("HTTP " + r.code()));
-            }
-            @Override public void onFailure(Call<Void> c, Throwable t) { cb.onError(t); }
         });
     }
 }
