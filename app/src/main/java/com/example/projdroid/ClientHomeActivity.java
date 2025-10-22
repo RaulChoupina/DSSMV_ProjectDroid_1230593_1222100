@@ -41,6 +41,7 @@ public class ClientHomeActivity extends AppCompatActivity {
             }
             return false;
         });
+
         // Lista
         RecyclerView rv = findViewById(R.id.rvBooks);
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -61,7 +62,7 @@ public class ClientHomeActivity extends AppCompatActivity {
         bottom.setOnItemSelectedListener(this::onBottomNav);
         bottom.setSelectedItemId(R.id.nav_home);
 
-        // Carregar lista inicial (query genérica: "a" devolve muita coisa)
+        // Carregar lista inicial (query genérica)
         loadBooks("a");
     }
 
@@ -94,12 +95,23 @@ public class ClientHomeActivity extends AppCompatActivity {
     }
 
     private void loadBooks(String query) {
-        repo.searchBooks(query, 1, new LibraryRepository.Callback<List<Book>>() {
-            @Override public void onSuccess(List<Book> data) {
-                adapter.submit(data);
+        repo.search(query, new LibraryRepository.Callback<List<Book>>() {
+            @Override
+            public void onSuccess(List<Book> data) {
+                runOnUiThread(() -> {
+                    adapter.setItems(data);
+                    adapter.notifyDataSetChanged();
+                });
             }
-            @Override public void onError(Throwable t) {
-                Toast.makeText(ClientHomeActivity.this, "Erro: " + t.getMessage(), Toast.LENGTH_LONG).show();
+
+            @Override
+            public void onError(Throwable t) {
+                runOnUiThread(() ->
+                        Toast.makeText(ClientHomeActivity.this,
+                                "Erro a carregar livros: " +
+                                        (t.getMessage() != null ? t.getMessage() : "desconhecido"),
+                                Toast.LENGTH_LONG).show()
+                );
             }
         });
     }

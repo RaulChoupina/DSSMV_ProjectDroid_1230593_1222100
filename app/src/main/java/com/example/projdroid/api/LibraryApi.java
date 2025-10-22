@@ -1,69 +1,51 @@
 package com.example.projdroid.api;
 
-import com.example.projdroid.models.Book;
-import com.example.projdroid.models.CheckedOutBook;
 import com.example.projdroid.models.Library;
 import com.example.projdroid.models.LibraryBook;
-import com.example.projdroid.models.Review;
-import com.example.projdroid.models.CreateReviewRequest;
 
 import java.util.List;
 
 import retrofit2.Call;
-import retrofit2.http.Body;
-import retrofit2.http.GET;
-import retrofit2.http.POST;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
+import retrofit2.http.*;
 
 public interface LibraryApi {
 
-    // ---------- Libraries ----------
-    @GET("v1/library")
+    // Endpoint para obter a lista de bibliotecas
+    @GET("library") // Definido para coincidir com a URL base completa
     Call<List<Library>> getLibraries();
 
-    @GET("v1/library/{libraryId}/book")
-    Call<List<LibraryBook>> getBooks(@Path("libraryId") String libraryId);
+    @GET("library/{id}/book")
+    Call<List<LibraryBook>> getBooksByLibraryId(@Path("id") String libraryId);
 
-    // ---------- Books ----------
-    @GET("v1/book/{isbn}")
-    Call<Book> getBookByIsbn(@Path("isbn") String isbn,
-                             @Query("persist") boolean persist);
+    @POST("library/{libraryId}/book/{isbn}")
+    Call<Void> addBook(@Path("libraryId") String libraryId,
+                       @Path("isbn") String isbn,
+                       @Body CreateLibraryBookRequest request);
 
-    // ---------- Search ----------
-    // Algumas instalações usam ?query=, outras ?q=. Mantemos as duas.
-    @GET("v1/search")
-    Call<List<Book>> searchBooksQuery(@Query("query") String query,
-                                      @Query("page") Integer page);
+    @GET("user/checked-out")
+    Call<List<LibraryBook>> getBooksByUser(@Query("userId") String username);
 
-    @GET("v1/search/typeahead")
-    Call<List<String>> typeahead(@Query("query") String query);
+    @POST("library")
+    Call<Library> addLibrary(@Body Library library);
 
-    // ---------- Reviews ----------
-    @GET("v1/book/{isbn}/review")
-    Call<List<Review>> getReviews(@Path("isbn") String isbn,
-                                  @Query("limit") Integer limit);
+    @POST("library/{libraryId}/book/{isbn}/checkin")
+    Call<Library> checkInBook(
+            @Path("libraryId") String libraryId,
+            @Path("isbn") String isbn,
+            @Query("userId") String userId
+    );
 
-    @POST("v1/book/{isbn}/review")
-    Call<Review> createReview(@Path("isbn") String isbn,
-                              @Body CreateReviewRequest body,
-                              @Query("userId") String userId);
+    @POST("library/{libraryId}/book/{isbn}/checkout")
+    Call<Library> checkOutBook(
+            @Path("libraryId") String libraryId,
+            @Path("isbn") String isbn,
+            @Query("userId") String userId
+    );
 
-    // ---------- User loans ----------
-    @GET("v1/user/checked-out")
-    Call<List<CheckedOutBook>> getCheckedOut(@Query("userId") String userId);
 
-    @GET("v1/user/checkout-history")
-    Call<List<CheckedOutBook>> getCheckoutHistory(@Query("userId") String userId);
+    @PUT("library/{id}")
+    Call<Library> updateLibrary(@Path("id") String id, @Body Library library);
 
-    // ---------- Checkout / Checkin (para usar depois) ----------
-    @POST("v1/library/{libraryId}/book/{bookId}/checkout")
-    Call<Void> checkout(@Path("libraryId") String libraryId,
-                        @Path("bookId") String bookId,
-                        @Query("userId") String userId);
-
-    @POST("v1/library/{libraryId}/book/{bookId}/checkin")
-    Call<Void> checkin(@Path("libraryId") String libraryId,
-                       @Path("bookId") String bookId,
-                       @Query("userId") String userId);
+    @DELETE("library/{id}")
+    Call<Void> removeLibrary(@Path("id") String id);
 }
