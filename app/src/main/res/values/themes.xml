@@ -2,7 +2,8 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.DSSMV_ProjectDroid_1230593_1222100_1" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">#1C1C1C</item> <!-- verde, por exemplo -->
+
     </style>
 
     <style name="Theme.DSSMV_ProjectDroid_1230593_1222100_1" parent="Base.Theme.DSSMV_ProjectDroid_1230593_1222100_1" />
