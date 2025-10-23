@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:padding="16dp"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+    <EditText
+            android:id="@+id/editTextLibraryName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Library Name"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:imeOptions="actionNext" />
+
+    <EditText
+            android:id="@+id/editTextLibraryAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Address"
+            android:inputType="textPostalAddress"
+            android:maxLines="2"
+            android:layout_marginTop="8dp" />
+
+    <!-- Open time (texto) -->
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Time:"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp" />
+
+        <EditText
+                android:id="@+id/editTextOpenTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="HH:mm"
+                android:inputType="time"
+                android:ems="6" />
+    </LinearLayout>
+
+    <!-- Close time (texto) -->
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Close Time:"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp" />
+
+        <EditText
+                android:id="@+id/editTextCloseTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="HH:mm"
+                android:inputType="time"
+                android:ems="6" />
+    </LinearLayout>
+
+    <!-- Open days -->
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Days:"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp" />
+
+        <Button
+                android:id="@+id/btnSelectOpenDays"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select Days" />
+    </LinearLayout>
+
+</LinearLayout>

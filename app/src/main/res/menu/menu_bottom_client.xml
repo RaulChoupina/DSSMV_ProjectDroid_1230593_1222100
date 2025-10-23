@@ -5,11 +5,12 @@
             android:icon="@drawable/ic_home_24"
             android:title="Início"/>
     <item
-            android:id="@+id/nav_loans"
-            android:icon="@drawable/ic_book_24"
-            android:title="Empréstimos"/>
+            android:id="@+id/action_add"
+            android:icon="@drawable/ic_add_24"
+            android:title="Adicionar"
+            android:orderInCategory="2"/>
     <item
-            android:id="@+id/nav_history"
-            android:icon="@drawable/ic_history_24"
-            android:title="Histórico"/>
+            android:id="@+id/action_edit"
+            android:icon="@drawable/ic_edit_24"
+            android:title="Editar"/>
 </menu>
