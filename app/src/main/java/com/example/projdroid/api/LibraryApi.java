@@ -17,11 +17,11 @@ public interface LibraryApi {
     @GET("library/{id}/book")
     Call<List<LibraryBook>> getBooksByLibraryId(@Path("id") String libraryId);
 
-    @POST("library/{libraryId}/book/{isbn}")
+   /* @POST("library/{libraryId}/book/{isbn}")
     Call<Void> addBook(@Path("libraryId") String libraryId,
                        @Path("isbn") String isbn,
                        @Body CreateLibraryBookRequest request);
-
+*/
     @GET("user/checked-out")
     Call<List<LibraryBook>> getBooksByUser(@Query("userId") String username);
 
