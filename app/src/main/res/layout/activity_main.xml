@@ -13,8 +13,8 @@
             android:layout_height="wrap_content"
             android:text="View Libraries"
             android:textAllCaps="false"
-            android:backgroundTint="#3F51B5"
-            android:textColor="@android:color/white"
+            android:backgroundTint="#DBDBDB"
+            android:textColor="@android:color/black"
             android:layout_marginBottom="20dp"
             android:elevation="4dp" />
 
@@ -24,8 +24,8 @@
             android:layout_height="wrap_content"
             android:text="View Users"
             android:textAllCaps="false"
-            android:backgroundTint="#009688"
-            android:textColor="@android:color/white"
+            android:backgroundTint="#DBDBDB"
+            android:textColor="@android:color/black"
             android:elevation="4dp" />
 
 </LinearLayout>
