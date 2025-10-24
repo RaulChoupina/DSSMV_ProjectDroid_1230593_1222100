@@ -35,25 +35,25 @@ public class LibrariesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_libraries);
 // BottomNav: item "add" e "edit" abrem as respetivas ações
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.action_add) {
-                addLibrary();
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
-                return false;
-            } else if (id == R.id.action_edit) {
-                openEditOrDeleteFlow(); // 👈 abre o diálogo de editar/apagar
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
-                return false;
-            } else if (id == R.id.nav_home) {
-                return true;
-            }
-
-            return false;
-        });
-
+        //BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        //bottomNav.setOnItemSelectedListener(item -> {
+        //    int id = item.getItemId();
+//
+        //    if (id == R.id.action_add) {
+        //        addLibrary();
+        //        bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+        //        return false;
+        //    } else if (id == R.id.action_edit) {
+        //        openEditOrDeleteFlow(); // 👈 abre o diálogo de editar/apagar
+        //        bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+        //        return false;
+        //    } else if (id == R.id.nav_home) {
+        //        return true;
+        //    }
+//
+        //    return false;
+        //});
+//
         fetchLibraries();
     }
 
@@ -389,7 +389,6 @@ public class LibrariesActivity extends AppCompatActivity {
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
-
 
 
 
