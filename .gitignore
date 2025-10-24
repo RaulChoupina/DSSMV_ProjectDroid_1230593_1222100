@@ -1,25 +1,52 @@
-# Ficheiros do IntelliJ
-/.idea/
-
-# Ficheiros do Gradle
-/.gradle/
-/build/
-
-# Ficheiros do Sistema
 *.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
 local.properties
-
-# Pastas temporárias e de cache (AS MAIS IMPORTANTES QUE FALTAVAM)
-/.tmp/
+# Gradle files
+.gradle/
+build/
 /caches/
-/daemon/
-/native/
 
-# Ficheiros de Log
+# Log/OS Files
 *.log
 
-# Outros ficheiros de build do Android
+# Android Studio generated files and folders
+captures/
 .externalNativeBuild/
 .cxx/
-/captures/
+*.aab
+*.apk
+output-metadata.json
+
+# IntelliJ
+*.iml
+.idea/
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+
+# Android Profiling
+*.hprof
+/wrapper/
+/native/
+/daemon/
+/android/
+/.tmp/

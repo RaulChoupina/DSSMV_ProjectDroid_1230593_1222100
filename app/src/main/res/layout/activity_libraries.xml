@@ -11,16 +11,16 @@
     <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appBar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize">
+            android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
                 style="@style/Widget.Material3.Toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="?attr/actionBarSize"
                 android:paddingHorizontal="12dp"
                 android:title="Libraries"
-                app:menu="@menu/menu_client_home_top"/>
+                app:menu="@menu/menu_client_home_top" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Conteúdo com Scroll (onde o código vai injetar as bibliotecas) -->
@@ -37,19 +37,7 @@
                 android:id="@+id/containerLibraryData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"/>
+                android:orientation="vertical" />
     </ScrollView>
-
-    <!-- Bottom Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomNav"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:background="?attr/colorSurface"
-            app:labelVisibilityMode="labeled"
-            app:menu="@menu/menu_bottom_client"/>
-
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
