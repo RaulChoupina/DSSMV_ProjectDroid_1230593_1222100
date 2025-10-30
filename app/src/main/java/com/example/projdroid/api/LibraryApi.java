@@ -1,8 +1,9 @@
 package com.example.projdroid.api;
 
+import com.example.projdroid.models.Book;
 import com.example.projdroid.models.Library;
 import com.example.projdroid.models.LibraryBook;
-
+import com.example.projdroid.models.CreateLibraryBookRequest;
 import java.util.List;
 
 import retrofit2.Call;
@@ -17,11 +18,17 @@ public interface LibraryApi {
     @GET("library/{id}/book")
     Call<List<LibraryBook>> getBooksByLibraryId(@Path("id") String libraryId);
 
-   /* @POST("library/{libraryId}/book/{isbn}")
+    @POST("library/{libraryId}/book/{isbn}")
     Call<Void> addBook(@Path("libraryId") String libraryId,
                        @Path("isbn") String isbn,
                        @Body CreateLibraryBookRequest request);
-*/
+
+    @GET("book/{isbn}")
+    Call<Book> loadBook(@Path("isbn") String isbn, @Query("persist") boolean persist);
+
+
+
+
     @GET("user/checked-out")
     Call<List<LibraryBook>> getBooksByUser(@Query("userId") String username);
 
@@ -46,6 +53,15 @@ public interface LibraryApi {
     @PUT("library/{id}")
     Call<Library> updateLibrary(@Path("id") String id, @Body Library library);
 
+    @PUT("library/{libraryId}/book/{isbn}")
+    Call<Void> updateBook(
+            @Path("libraryId") String libraryId,
+            @Path("isbn") String isbn,
+            @Body CreateLibraryBookRequest request
+    );
+
     @DELETE("library/{id}")
     Call<Void> removeLibrary(@Path("id") String id);
+
+  ;
 }
