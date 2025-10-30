@@ -2,6 +2,7 @@ package com.example.projdroid.ui;
 
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -54,6 +55,7 @@ public class LibrariesActivity extends AppCompatActivity {
             return false;
         });
 
+
         fetchLibraries();
     }
 
@@ -103,6 +105,12 @@ public class LibrariesActivity extends AppCompatActivity {
                             "Open Status: "  + (lib.isOpen() ? "Open" : "Closed") + "\n" +
                             "Open Days: "    + safe(lib.getOpenDays()) + "\n"
             );
+
+            libraryView.setOnClickListener(v -> {
+                Intent intent = new Intent(LibrariesActivity.this, LibraryDetailActivity.class);
+                intent.putExtra("library_id", lib.getId()); // garantir que lib.getId() não é null
+                startActivity(intent);
+            });
 
             container.addView(libraryView);
 
