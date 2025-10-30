@@ -7,7 +7,6 @@
         android:layout_height="match_parent"
         tools:context=".ui.LibrariesActivity">
 
-    <!-- AppBar (Toolbar) -->
     <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appBar"
             android:layout_width="match_parent"
@@ -20,10 +19,10 @@
                 android:layout_height="match_parent"
                 android:paddingHorizontal="12dp"
                 android:title="Libraries"
-                app:menu="@menu/menu_client_home_top"/>
+                app:menu="@menu/menu_libraries"/>
+
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Conteúdo com Scroll (onde o código vai injetar as bibliotecas) -->
     <ScrollView
             android:id="@+id/scrollLibraries"
             android:layout_width="match_parent"
@@ -37,10 +36,41 @@
                 android:id="@+id/containerLibraryData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"/>
+                android:orientation="vertical">
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:background="@drawable/library_item_background"
+                    tools:text="Library Name: Portugal Biblioteca cenas!!\nAddress: Rua de Portugal\nOpen Status: Open\nOpen Days: todos\nOpen Time: 10:00:00\nClose Time: 23:59:00" />
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:background="@drawable/library_item_background"
+                    tools:text="Library Name: Biblioteca Palácio Galveia\nAddress: Palácio Galveias. Campo Pequeno\nOpen Status: Open\nOpen Days: N/A\nOpen Time: 10:00:00\nClose Time: 17:00:00" />
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:background="@drawable/library_item_background"
+                    tools:text="Library Name: City Reading Room\nAddress: 543 Redwood Road\nOpen Status: Open\nOpen Days: N/A\nOpen Time: 01:00:00\nClose Time: 18:59:00" />
+
+        </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNav"
             android:layout_width="match_parent"
@@ -49,7 +79,5 @@
             android:background="?attr/colorSurface"
             app:labelVisibilityMode="labeled"
             app:menu="@menu/menu_bottom_client"/>
-
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

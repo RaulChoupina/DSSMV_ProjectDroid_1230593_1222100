@@ -5,6 +5,8 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -14,13 +16,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 
 import com.example.projdroid.R;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.api.RetrofitClient;
 import com.example.projdroid.models.Library;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -31,27 +36,33 @@ public class LibrariesActivity extends AppCompatActivity {
 
     private static final String TAG = "LibrariesActivity";
 
+    // lista completa para pesquisa
+    private final List<Library> allLibraries = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_libraries);
-// BottomNav: item "add" e "edit" abrem as respetivas ações
+
+        // Toolbar
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        // Bottom Navigation
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-
             if (id == R.id.action_add) {
                 addLibrary();
                 bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
                 return false;
             } else if (id == R.id.action_edit) {
-                openEditOrDeleteFlow(); // 👈 abre o diálogo de editar/apagar
+                openEditOrDeleteFlow();
                 bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
                 return false;
             } else if (id == R.id.nav_home) {
                 return true;
             }
-
             return false;
         });
 
@@ -59,7 +70,60 @@ public class LibrariesActivity extends AppCompatActivity {
         fetchLibraries();
     }
 
-    /** Chama a API e obtém a lista de bibliotecas */
+    /** ===================== MENU DA LUPA ===================== */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_libraries, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setQueryHint("Pesquisar biblioteca...");
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                filter(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filter(newText);
+                return true;
+            }
+        });
+
+        // ao fechar a lupa, mostra lista completa novamente
+        searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+            @Override public boolean onMenuItemActionExpand(MenuItem item) { return true; }
+            @Override public boolean onMenuItemActionCollapse(MenuItem item) {
+                displayLibraries(allLibraries);
+                return true;
+            }
+        });
+
+        return true;
+    }
+
+    /** ===================== PESQUISA ===================== */
+    private void filter(String query) {
+        if (query == null) query = "";
+        String q = query.trim().toLowerCase();
+
+        if (q.isEmpty()) {
+            displayLibraries(allLibraries);
+            return;
+        }
+
+        List<Library> filtered = new ArrayList<>();
+        for (Library lib : allLibraries) {
+            String name = lib.getName() == null ? "" : lib.getName().toLowerCase();
+            if (name.contains(q)) filtered.add(lib);
+        }
+        displayLibraries(filtered);
+    }
+
+    /** ===================== API CALLS ===================== */
     private void fetchLibraries() {
         LibraryApi api = RetrofitClient
                 .getClient("http://193.136.62.24/v1/")
@@ -69,7 +133,9 @@ public class LibrariesActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Library>> call, Response<List<Library>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    displayLibraries(response.body());
+                    allLibraries.clear();
+                    allLibraries.addAll(response.body()); // guardar para filtro
+                    displayLibraries(allLibraries);
                 } else {
                     showError("Erro HTTP: " + response.code());
                 }
@@ -82,7 +148,7 @@ public class LibrariesActivity extends AppCompatActivity {
         });
     }
 
-    /** Mostra a lista de bibliotecas num LinearLayout simples */
+    /** ===================== MOSTRAR BIBLIOTECAS ===================== */
     private void displayLibraries(List<Library> libraries) {
         LinearLayout container = findViewById(R.id.containerLibraryData);
         if (container == null) {
@@ -91,12 +157,13 @@ public class LibrariesActivity extends AppCompatActivity {
         }
         container.removeAllViews();
 
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+
         for (Library lib : libraries) {
             TextView libraryView = new TextView(LibrariesActivity.this);
             libraryView.setTextSize(16);
             libraryView.setTextColor(getResources().getColor(android.R.color.black));
             libraryView.setBackgroundResource(R.drawable.library_item_background);
-            int pad = (int) (16 * getResources().getDisplayMetrics().density);
             libraryView.setPadding(pad, pad, pad, pad);
 
             libraryView.setText(
@@ -113,14 +180,13 @@ public class LibrariesActivity extends AppCompatActivity {
             });
 
             container.addView(libraryView);
-
-            LinearLayout.LayoutParams params =
-                    (LinearLayout.LayoutParams) libraryView.getLayoutParams();
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) libraryView.getLayoutParams();
             params.setMargins(0, 0, 0, pad);
             libraryView.setLayoutParams(params);
         }
     }
 
+    /** ===================== AUXILIARES ===================== */
     private String safe(String s) {
         return (s == null || s.isEmpty()) ? "N/A" : s;
     }
@@ -130,11 +196,11 @@ public class LibrariesActivity extends AppCompatActivity {
         Toast.makeText(LibrariesActivity.this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    /** Valida "HH:mm" (00:00–23:59) */
     private boolean isValidTime(String hhmm) {
         return hhmm != null && hhmm.matches("^([01]\\d|2[0-3]):[0-5]\\d$");
     }
 
+    /** ===================== ADICIONAR BIBLIOTECA ===================== */
     private void addLibrary() {
         final boolean[] selectedDays = new boolean[7];
         final String[] daysOfWeek = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
@@ -148,13 +214,11 @@ public class LibrariesActivity extends AppCompatActivity {
         EditText editTextCloseTime     = dialogView.findViewById(R.id.editTextCloseTime);
         Button   btnSelectOpenDays     = dialogView.findViewById(R.id.btnSelectOpenDays);
 
-        // Dias abertos (multi-select)
+        // seleção dos dias
         btnSelectOpenDays.setOnClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(LibrariesActivity.this);
             builder.setTitle("Select Open Days");
-            builder.setMultiChoiceItems(daysOfWeek, selectedDays, (dialog, which, isChecked) -> {
-                selectedDays[which] = isChecked;
-            });
+            builder.setMultiChoiceItems(daysOfWeek, selectedDays, (dialog, which, isChecked) -> selectedDays[which] = isChecked);
             builder.setPositiveButton("OK", (dialog, which) -> {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < daysOfWeek.length; i++) {
@@ -223,130 +287,51 @@ public class LibrariesActivity extends AppCompatActivity {
                 .show();
     }
 
-
-    private void deleteLibrary(String libraryId) {
-        if (libraryId == null || libraryId.isEmpty()) {
-            showError("Invalid library ID");
-            return;
-        }
-
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
-        Call<Void> call = api.removeLibrary(libraryId);
-        call.enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(LibrariesActivity.this,
-                            "Library deleted successfully", Toast.LENGTH_SHORT).show();
-                    fetchLibraries(); // refresh
-                } else {
-                    Toast.makeText(LibrariesActivity.this,
-                            "Failed to delete library (HTTP " + response.code() + ")", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(LibrariesActivity.this,
-                        "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-
-    private void updateLibrary(Library library) {
-        if (library == null || library.getId() == null || library.getId().isEmpty()) {
-            showError("Invalid library data");
-            return;
-        }
-
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
-        Call<Library> call = api.updateLibrary(library.getId(), library);
-        call.enqueue(new Callback<Library>() {
-            @Override
-            public void onResponse(Call<Library> call, Response<Library> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(LibrariesActivity.this,
-                            "Library updated successfully!", Toast.LENGTH_SHORT).show();
-                    fetchLibraries();
-                } else {
-                    Toast.makeText(LibrariesActivity.this,
-                            "Failed to update library (HTTP " + response.code() + ")", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Library> call, Throwable t) {
-                Toast.makeText(LibrariesActivity.this,
-                        "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    /** Fluxo: ir buscar bibliotecas e deixar o utilizador escolher para editar/apagar */
+    /** ===================== EDITAR / APAGAR ===================== */
     private void openEditOrDeleteFlow() {
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
-        api.getLibraries().enqueue(new retrofit2.Callback<java.util.List<Library>>() {
+        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/").create(LibraryApi.class);
+        api.getLibraries().enqueue(new Callback<List<Library>>() {
             @Override
-            public void onResponse(retrofit2.Call<java.util.List<Library>> call,
-                                   retrofit2.Response<java.util.List<Library>> response) {
+            public void onResponse(Call<List<Library>> call, Response<List<Library>> response) {
                 if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
                     showError("Não foi possível carregar bibliotecas.");
                     return;
                 }
-                java.util.List<Library> list = response.body();
 
-                // nomes para o selector
+                List<Library> list = response.body();
                 String[] items = new String[list.size()];
                 for (int i = 0; i < list.size(); i++) {
-                    Library l = list.get(i);
-                    String n = (l.getName() == null || l.getName().isEmpty()) ? "(sem nome)" : l.getName();
-                    items[i] = n;
+                    items[i] = safe(list.get(i).getName());
                 }
 
-                new android.app.AlertDialog.Builder(LibrariesActivity.this)
+                new AlertDialog.Builder(LibrariesActivity.this)
                         .setTitle("Escolher biblioteca")
-                        .setItems(items, (d, which) -> {
-                            Library selected = list.get(which);
-                            showEditDeleteDialog(selected);
-                        })
+                        .setItems(items, (d, which) -> showEditDeleteDialog(list.get(which)))
                         .setNegativeButton("Cancelar", null)
                         .show();
             }
 
             @Override
-            public void onFailure(retrofit2.Call<java.util.List<Library>> call, Throwable t) {
+            public void onFailure(Call<List<Library>> call, Throwable t) {
                 showError("Erro: " + t.getMessage());
             }
         });
     }
 
-    /** Diálogo para escolher Editar ou Apagar a biblioteca selecionada */
     private void showEditDeleteDialog(Library lib) {
         String[] actions = {"Editar", "Apagar"};
 
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle(safe(lib.getName()))
                 .setItems(actions, (dialog, which) -> {
-                    if (which == 0) {
-                        showInlineEditDialog(lib);     // PUT
-                    } else if (which == 1) {
-                        confirmDeleteLibrary(lib);     // DELETE
-                    }
+                    if (which == 0) showInlineEditDialog(lib);
+                    else if (which == 1) confirmDeleteLibrary(lib);
                 })
                 .setNegativeButton("Fechar", null)
                 .show();
     }
 
-    /** Diálogo simples (programático) para editar Nome/Morada e fazer PUT */
     private void showInlineEditDialog(Library lib) {
-        // Layout vertical com 2 EditTexts
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         int pad = (int) (16 * getResources().getDisplayMetrics().density);
@@ -363,34 +348,25 @@ public class LibrariesActivity extends AppCompatActivity {
         etAddr.setPadding(0, pad / 2, 0, 0);
         layout.addView(etAddr);
 
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Editar biblioteca")
                 .setView(layout)
                 .setPositiveButton("Guardar", (d, w) -> {
-                    String newName = etName.getText().toString().trim();
-                    String newAddr = etAddr.getText().toString().trim();
-
-                    // cria uma cópia atualizada
                     Library updated = new Library();
                     updated.setId(lib.getId());
-                    updated.setName(newName.isEmpty() ? lib.getName() : newName);
-                    updated.setAddress(newAddr.isEmpty() ? lib.getAddress() : newAddr);
-                    // manter restantes campos existentes
+                    updated.setName(etName.getText().toString().trim().isEmpty() ? lib.getName() : etName.getText().toString().trim());
+                    updated.setAddress(etAddr.getText().toString().trim().isEmpty() ? lib.getAddress() : etAddr.getText().toString().trim());
                     updated.setOpenDays(lib.getOpenDays());
                     updated.setOpenTime(lib.getOpenTime());
                     updated.setCloseTime(lib.getCloseTime());
-                    // se tiveres um campo boolean isOpen no modelo:
-                    // updated.setOpen(lib.isOpen());
-
-                    updateLibrary(updated); // chama o teu método PUT
+                    updateLibrary(updated);
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
 
-    /** Confirmação e chamada ao teu método DELETE */
     private void confirmDeleteLibrary(Library lib) {
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Apagar biblioteca")
                 .setMessage("Queres mesmo apagar \"" + safe(lib.getName()) + "\"?")
                 .setPositiveButton("Apagar", (d, w) -> deleteLibrary(lib.getId()))
@@ -398,7 +374,43 @@ public class LibrariesActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void updateLibrary(Library library) {
+        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/").create(LibraryApi.class);
+        api.updateLibrary(library.getId(), library).enqueue(new Callback<Library>() {
+            @Override
+            public void onResponse(Call<Library> call, Response<Library> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(LibrariesActivity.this, "Library updated successfully!", Toast.LENGTH_SHORT).show();
+                    fetchLibraries();
+                } else {
+                    showError("Failed to update library (HTTP " + response.code() + ")");
+                }
+            }
 
+            @Override
+            public void onFailure(Call<Library> call, Throwable t) {
+                showError("Error: " + t.getMessage());
+            }
+        });
+    }
 
+    private void deleteLibrary(String libraryId) {
+        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/").create(LibraryApi.class);
+        api.removeLibrary(libraryId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(LibrariesActivity.this, "Library deleted successfully!", Toast.LENGTH_SHORT).show();
+                    fetchLibraries();
+                } else {
+                    showError("Failed to delete library (HTTP " + response.code() + ")");
+                }
+            }
 
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                showError("Error: " + t.getMessage());
+            }
+        });
+    }
 }
