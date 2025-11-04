@@ -34,6 +34,52 @@ import retrofit2.Response;
 
 public class LibrariesActivity extends AppCompatActivity {
 
+    // --- membros da classe ---
+    private static final String BASE_URL = "http://193.136.62.24/v1/";
+    private final java.util.concurrent.ExecutorService imgExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(3);
+    private final android.os.Handler mainHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private String coverUrl(String imageName) {
+        if (imageName == null || imageName.trim().isEmpty()) return null;
+        return BASE_URL + "assets/cover/" + imageName.trim();
+    }
+
+    // --- download e colocação no ImageView (sem Glide) ---
+    private void loadCoverInto(android.widget.ImageView target, String url) {
+        if (url == null) { target.setImageResource(R.drawable.cover_error); return; }
+
+        // opcional: placeholder
+        target.setImageResource(R.drawable.cover_placeholder);
+
+        imgExecutor.execute(() -> {
+            android.graphics.Bitmap bmp = null;
+            java.net.HttpURLConnection conn = null;
+            try {
+                java.net.URL u = new java.net.URL(url);
+                conn = (java.net.HttpURLConnection) u.openConnection();
+                conn.setConnectTimeout(8000);
+                conn.setReadTimeout(8000);
+                conn.setInstanceFollowRedirects(true);
+                try (java.io.InputStream is = conn.getInputStream()) {
+                    bmp = android.graphics.BitmapFactory.decodeStream(is);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("COVER", "Erro a carregar " + url, e);
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+
+            android.graphics.Bitmap finalBmp = bmp;
+            mainHandler.post(() -> {
+                if (finalBmp != null) target.setImageBitmap(finalBmp);
+                else target.setImageResource(R.drawable.cover_error);
+            });
+        });
+    }
+
+
     private static final String TAG = "LibrariesActivity";
 
     // lista completa para pesquisa
@@ -151,10 +197,6 @@ public class LibrariesActivity extends AppCompatActivity {
     /** ===================== MOSTRAR BIBLIOTECAS ===================== */
     private void displayLibraries(List<Library> libraries) {
         LinearLayout container = findViewById(R.id.containerLibraryData);
-        if (container == null) {
-            showError("Layout containerLibraryData não encontrado no XML.");
-            return;
-        }
         container.removeAllViews();
 
         int pad = (int) (16 * getResources().getDisplayMetrics().density);
@@ -162,9 +204,14 @@ public class LibrariesActivity extends AppCompatActivity {
         for (Library lib : libraries) {
             TextView libraryView = new TextView(LibrariesActivity.this);
             libraryView.setTextSize(16);
-            libraryView.setTextColor(getResources().getColor(android.R.color.black));
-            libraryView.setBackgroundResource(R.drawable.library_item_background);
+            libraryView.setTextColor(getResources().getColor(android.R.color.white)); // texto branco p/ contraste
             libraryView.setPadding(pad, pad, pad, pad);
+
+            // 👉 cor do cartão: verde se aberta, vermelho se fechada
+            int bgRes = lib.isOpen()
+                    ? R.drawable.library_item_background_open
+                    : R.drawable.library_item_background_closed;
+            libraryView.setBackgroundResource(bgRes);
 
             libraryView.setText(
                     "Library Name: " + safe(lib.getName()) + "\n" +
@@ -175,7 +222,7 @@ public class LibrariesActivity extends AppCompatActivity {
 
             libraryView.setOnClickListener(v -> {
                 Intent intent = new Intent(LibrariesActivity.this, LibraryDetailActivity.class);
-                intent.putExtra("library_id", lib.getId()); // garantir que lib.getId() não é null
+                intent.putExtra("library_id", lib.getId());
                 startActivity(intent);
             });
 
@@ -185,6 +232,7 @@ public class LibrariesActivity extends AppCompatActivity {
             libraryView.setLayoutParams(params);
         }
     }
+
 
     /** ===================== AUXILIARES ===================== */
     private String safe(String s) {
