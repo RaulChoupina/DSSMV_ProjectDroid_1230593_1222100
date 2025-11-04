@@ -250,6 +250,8 @@ public class LibrariesActivity extends AppCompatActivity {
 
     /** ===================== ADICIONAR BIBLIOTECA ===================== */
     private void addLibrary() {
+        final String[] openTime = {""};
+        final String[] closeTime = {""};
         final boolean[] selectedDays = new boolean[7];
         final String[] daysOfWeek = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
 
@@ -258,9 +260,24 @@ public class LibrariesActivity extends AppCompatActivity {
 
         EditText editTextLibraryName   = dialogView.findViewById(R.id.editTextLibraryName);
         EditText editTextLibraryAddress= dialogView.findViewById(R.id.editTextLibraryAddress);
-        EditText editTextOpenTime      = dialogView.findViewById(R.id.editTextOpenTime);
-        EditText editTextCloseTime     = dialogView.findViewById(R.id.editTextCloseTime);
+        Button btnSelectOpenTime = dialogView.findViewById(R.id.btnSelectOpenTime);
+        Button btnSelectCloseTime = dialogView.findViewById(R.id.btnSelectCloseTime);
         Button   btnSelectOpenDays     = dialogView.findViewById(R.id.btnSelectOpenDays);
+
+
+        btnSelectOpenTime.setOnClickListener(v -> {
+            new TimePickerDialog(LibrariesActivity.this, (view, hourOfDay, minute) -> {
+                openTime[0] = String.format("%02d:%02d", hourOfDay, minute);
+                btnSelectOpenTime.setText("Open: " + openTime[0]);
+            }, 9, 0, true).show(); // 9:00 valor inicial
+        });
+
+        btnSelectCloseTime.setOnClickListener(v -> {
+            new TimePickerDialog(LibrariesActivity.this, (view, hourOfDay, minute) -> {
+                closeTime[0] = String.format("%02d:%02d", hourOfDay, minute);
+                btnSelectCloseTime.setText("Close: " + closeTime[0]);
+            }, 18, 0, true).show(); // 18:00 valor inicial
+        });
 
         // seleção dos dias
         btnSelectOpenDays.setOnClickListener(v -> {
@@ -287,13 +304,11 @@ public class LibrariesActivity extends AppCompatActivity {
                 .setPositiveButton("Add", (dialog, which) -> {
                     String name  = editTextLibraryName.getText().toString().trim();
                     String addr  = editTextLibraryAddress.getText().toString().trim();
-                    String oTime = editTextOpenTime.getText().toString().trim();
-                    String cTime = editTextCloseTime.getText().toString().trim();
+
 
                     if (name.isEmpty()) { showError("Name is required"); return; }
                     if (addr.isEmpty()) { showError("Address is required"); return; }
-                    if (!isValidTime(oTime)) { showError("Open time must be HH:mm"); return; }
-                    if (!isValidTime(cTime)) { showError("Close time must be HH:mm"); return; }
+
 
                     StringBuilder openDaysBuilder = new StringBuilder();
                     for (int i = 0; i < daysOfWeek.length; i++) {
@@ -306,8 +321,8 @@ public class LibrariesActivity extends AppCompatActivity {
                     Library newLibrary = new Library();
                     newLibrary.setName(name);
                     newLibrary.setAddress(addr);
-                    newLibrary.setOpenTime(oTime);
-                    newLibrary.setCloseTime(cTime);
+                    newLibrary.setOpenTime(openTime[0]);
+                    newLibrary.setCloseTime(closeTime[0]);
                     newLibrary.setOpenDays(openDaysBuilder.toString().trim());
 
                     LibraryApi api = RetrofitClient
