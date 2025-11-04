@@ -8,7 +8,7 @@
     <EditText
             android:id="@+id/editTextLibraryName"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="Library Name"
             android:inputType="textCapWords"
             android:maxLines="1"
@@ -17,7 +17,7 @@
     <EditText
             android:id="@+id/editTextLibraryAddress"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:hint="Address"
             android:inputType="textPostalAddress"
             android:maxLines="2"
@@ -26,7 +26,7 @@
     <!-- Open time (texto) -->
     <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_marginTop="12dp">
@@ -38,13 +38,15 @@
                 android:textStyle="bold"
                 android:layout_marginEnd="8dp" />
 
-        <EditText
-                android:id="@+id/editTextOpenTime"
+        <Button
+                android:id="@+id/btnSelectOpenTime"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:hint="HH:mm"
-                android:inputType="time"
-                android:ems="6" />
+                android:layout_height="48dp"
+                android:text="Select Open Time"
+                android:layout_marginTop="8dp" />
+
+
+
     </LinearLayout>
 
     <!-- Close time (texto) -->
@@ -62,13 +64,14 @@
                 android:textStyle="bold"
                 android:layout_marginEnd="8dp" />
 
-        <EditText
-                android:id="@+id/editTextCloseTime"
+        <Button
+                android:id="@+id/btnSelectCloseTime"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:hint="HH:mm"
-                android:inputType="time"
-                android:ems="6" />
+                android:layout_height="48dp"
+                android:text="Select Close Time"
+                android:layout_marginTop="8dp" />
+
+
     </LinearLayout>
 
     <!-- Open days -->
