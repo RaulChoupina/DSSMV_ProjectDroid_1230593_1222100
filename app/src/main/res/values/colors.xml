@@ -3,4 +3,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="grey11">#1C1C1C</color>
+    <color name="library_open_green">#2E7D32</color>
+    <color name="library_closed_red">#C62828</color>
+
 </resources>

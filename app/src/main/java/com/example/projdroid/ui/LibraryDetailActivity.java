@@ -18,6 +18,14 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+
+// Importa o novo ficheiro que criámos
+import com.example.projdroid.api.ApiConstants;
+
+
 public class LibraryDetailActivity extends AppCompatActivity {
 
     private String libraryId;
@@ -76,32 +84,84 @@ public class LibraryDetailActivity extends AppCompatActivity {
     }
 
     private void displayBooks(List<LibraryBook> books) {
-            LinearLayout container = findViewById(R.id.containerBooksData);
+        LinearLayout container = findViewById(R.id.containerBooksData);
         container.removeAllViews();
+
+        int pad = (int) (12 * getResources().getDisplayMetrics().density);
+        int imgW = (int) (64 * getResources().getDisplayMetrics().density);
+        int imgH = (int) (96 * getResources().getDisplayMetrics().density);
 
         for (LibraryBook lb : books) {
             Book b = lb.getBook();
 
+            // ---- Card/linha horizontal
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setBackgroundResource(R.drawable.library_item_background);
+            row.setPadding(pad, pad, pad, pad);
+
+            // margem inferior entre cards
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            rowLp.setMargins(0, 0, 0, pad);
+            container.addView(row, rowLp);
+
+            // ---- Cover
+            ImageView cover = new ImageView(this);
+            LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(imgW, imgH);
+            imgLp.setMargins(0, 0, pad, 0);
+            cover.setLayoutParams(imgLp);
+            cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            row.addView(cover);
+
+            // ***** ALTERAÇÃO AQUI *****
+            // Chamada correta ao método fetchBookCover
+            fetchBookCover(lb.getIsbn(), b, cover, lb.getStock());
+
+            // ---- Texto
             TextView tv = new TextView(this);
             tv.setTextSize(16);
-            tv.setPadding(8, 8, 8, 8);
-            tv.setBackgroundResource(R.drawable.library_item_background);
+            tv.setTextColor(getResources().getColor(android.R.color.black));
+
+            // Usei o teu getAuthorDisplay() do Book.java para ser mais robusto
             tv.setText(
                     "Title: " + (b.getTitle() != null ? b.getTitle() : "N/A") + "\n" +
-                            "Author: " + ((b.getAuthors() != null && !b.getAuthors().isEmpty()) ?
-                            b.getAuthors().get(0).getName() : "Unknown") + "\n" +
+                            "Author: " + (b.getAuthorDisplay()) + "\n" +
                             "Stock: " + lb.getStock()
             );
+            row.addView(tv);
 
             // Long click = editar
-            tv.setOnLongClickListener(v -> {
-                showEditBookDialog(lb);
-                return true;
-            });
-
-            container.addView(tv);
+            row.setOnLongClickListener(v -> { showEditBookDialog(lb); return true; });
         }
     }
+    private void fetchBookCover(String isbn, Book book, ImageView target, int stock) {
+        // 1) Tenta primeiro o nome vindo no Book (assume que fizeste a alteração no Book.java)
+        String imageName = null;
+        if (book != null && book.getCover() != null) {
+            imageName = book.getImage();
+        }
+        // 2) Fallback: tenta por ISBN caso o backend use nomes com ISBN
+        if ((imageName == null || imageName.isEmpty()) && isbn != null && !isbn.isEmpty()) {
+            imageName = isbn + ".jpg"; // ou .png, dependendo do teu servidor
+        }
+
+        // 3) Constroi o URL usando o novo ApiConstants
+        String url = ApiConstants.coverUrl(imageName);
+
+        Log.d("LibraryDetailActivity", "Loading cover from URL: " + url);
+
+        Glide.with(this)
+                .load(url)
+                // Certifica-te que tens estes ficheiros em res/drawable
+                .placeholder(R.drawable.cover_placeholder)
+                .error(R.drawable.cover_error)
+                .transform(new CenterCrop(), new RoundedCorners(12))
+                .into(target);
+    }
+
 
     /** ===================== 2. ADICIONAR LIVRO ===================== **/
     private void showAddBookDialog() {

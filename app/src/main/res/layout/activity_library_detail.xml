@@ -20,7 +20,7 @@
                 android:layout_height="match_parent"
                 android:paddingHorizontal="12dp"
                 android:title="Books"
-                app:menu="@menu/menu_client_home_top"/>
+                app:menu="@menu/menu_libraries"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Conteúdo com Scroll (onde o código vai injetar os livros) -->
