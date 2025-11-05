@@ -71,4 +71,9 @@ public interface LibraryApi {
     @GET("books/isbn/{isbn}")
     Call<Book> getBookByIsbn(@Path("isbn") String isbn);
 
+    @GET("search/typeahead")
+    Call<List<Book>> typeaheadBooks(@Query("query") String query);
+
+
+
 }
