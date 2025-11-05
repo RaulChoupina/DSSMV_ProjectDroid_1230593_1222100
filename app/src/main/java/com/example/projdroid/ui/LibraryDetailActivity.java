@@ -3,6 +3,7 @@ package com.example.projdroid.ui;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.projdroid.R;
@@ -10,6 +11,8 @@ import com.example.projdroid.api.ApiConstants;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.api.RetrofitClient;
 import com.example.projdroid.models.Book;
+import com.example.projdroid.models.Library;
+import com.example.projdroid.models.LibraryBook;
 import com.example.projdroid.models.CreateLibraryBookRequest;
 import com.example.projdroid.models.LibraryBook;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -49,20 +52,19 @@ public class LibraryDetailActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.action_add) {
-                // Botão "+"
+                // Botão "Adicionar"
                 showAddBookDialog();
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
                 return false;
 
-            } else if (id == R.id.nav_home) {
-                // Botão "Home"
-                return true;
+            } else if (id == R.id.nav_loans) {
+                // Botão "Empréstimo"
+                showLoanDialog(libraryId);
+                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
+                return false;
 
-            // ADICIONADO: Botão "Editar"
-            } else if (id == R.id.action_edit) { // <<< CONFIRMA ESTE ID
-                // Chama o novo fluxo de edição que lista os livros
-                openBookEditFlow();
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+            } else if (id == R.id.action_edit) {
+                Toast.makeText(this, "Função Editar ainda não implementada", Toast.LENGTH_SHORT).show();
                 return false;
             }
 
@@ -400,18 +402,8 @@ public class LibraryDetailActivity extends AppCompatActivity {
 
 
 
-    /** ===================== AUXILIARES ===================== **/
 
-    /**
-     * Método auxiliar para obter o título de um livro de forma segura
-     */
-    private String getSafeBookTitle(LibraryBook lb) {
-        if (lb != null && lb.getBook() != null && lb.getBook().getTitle() != null) {
-            return lb.getBook().getTitle();
-        }
-        return "Livro sem título";
-    }
-
+    /** ===================== AUX ===================== **/
     private void showError(String msg) {
         new AlertDialog.Builder(this)
                 .setTitle("Error")
