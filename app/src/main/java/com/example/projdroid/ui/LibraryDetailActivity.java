@@ -327,12 +327,12 @@ public class LibraryDetailActivity extends AppCompatActivity {
     }
 
     /**
-     * PASSO 2: O "Hub" (chamado pelo openBookEditFlow)
-     * Mostra as opções "Editar" ou "Apagar" para um livro.
+     *
+     * Mostra as opções "Editar"  um livro.
      */
     private void showEditDeleteBookDialog(LibraryBook libraryBook) {
         String title = getSafeBookTitle(libraryBook);
-        String[] actions = {"Editar Stock", "Apagar Livro"};
+        String[] actions = {"Editar Stock"};
 
         new AlertDialog.Builder(this)
                 .setTitle(title)
@@ -340,9 +340,7 @@ public class LibraryDetailActivity extends AppCompatActivity {
                     if (which == 0) {
                         // "Editar Stock"
                         showEditStockDialog(libraryBook); // (Renomeei o teu método)
-                    } else if (which == 1) {
-                        // "Apagar Livro"
-                        confirmDeleteBook(libraryBook);
+
                     }
                 })
                 .setNegativeButton("Fechar", null)
@@ -398,51 +396,8 @@ public class LibraryDetailActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * PASSO 3b: Apagar Livro (Confirmação)
-     */
-    private void confirmDeleteBook(LibraryBook libraryBook) {
-        String title = getSafeBookTitle(libraryBook);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Apagar Livro")
-                .setMessage("Queres mesmo apagar \"" + title + "\" desta biblioteca?")
-                .setPositiveButton("Apagar", (d, w) -> {
-                    deleteBookFromLibrary(libraryBook.getIsbn());
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
-    }
 
-    /**
-     * PASSO 3c: Apagar Livro (Chamada à API)
-     */
-    private void deleteBookFromLibrary(String isbn) {
-        if (libraryId == null) { showError("Library ID missing"); return; }
-        if (isbn == null) { showError("Book ISBN missing"); return; }
-
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
-        // Assume que adicionaste 'deleteBook' à LibraryApi.java
-        Call<Void> call = api.deleteBook(libraryId, isbn);
-
-        call.enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(LibraryDetailActivity.this, "Livro apagado!", Toast.LENGTH_SHORT).show();
-                    fetchBooks(libraryId); // Atualiza a lista
-                } else {
-                    showError("Falha ao apagar (HTTP " + response.code() + ")");
-                }
-            }
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                showError("Erro de rede: " + t.getMessage());
-            }
-        });
-    }
 
 
     /** ===================== AUXILIARES ===================== **/
