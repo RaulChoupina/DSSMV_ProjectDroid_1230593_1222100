@@ -64,4 +64,16 @@ public interface LibraryApi {
     Call<Void> removeLibrary(@Path("id") String id);
 
   ;
+
+    @GET("books/{id}")
+    Call<Book> getBookById(@Path("id") String id);
+
+    @GET("books/isbn/{isbn}")
+    Call<Book> getBookByIsbn(@Path("isbn") String isbn);
+
+    @DELETE("libraries/{libraryId}/books/{isbn}")
+    Call<Void> deleteBook(
+            @Path("libraryId") String libraryId,
+            @Path("isbn") String isbn
+    );
 }
