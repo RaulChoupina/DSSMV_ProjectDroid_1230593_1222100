@@ -16,7 +16,7 @@
     <string name="hint_stock">Stock</string>
     <string name="btn_add_update">Adicionar / Atualizar</string>
     <string name="btn_remove">Retirar (stock=0)</string>
-
+    <string name="search">Pesquisar</string>
 
 
 </resources>

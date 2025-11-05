@@ -1,116 +1,178 @@
 package com.example.projdroid.ui;
 
-import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
-import android.widget.*;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import android.widget.TextView;
+// Importa o SearchView correto
+import androidx.appcompat.widget.SearchView;
+
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.example.projdroid.R;
 import com.example.projdroid.api.ApiConstants;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.api.RetrofitClient;
 import com.example.projdroid.models.Book;
-import com.example.projdroid.models.Library;
 import com.example.projdroid.models.LibraryBook;
-import com.example.projdroid.models.CreateLibraryBookRequest;
-import com.example.projdroid.models.LibraryBook;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.bitmap.CenterCrop;
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class LibraryDetailActivity extends AppCompatActivity {
 
+    private static final String TAG = "LibraryDetailActivity";
+
     private String libraryId;
-    // Lista para guardar os livros carregados, para o menu "Editar"
-    private List<LibraryBook> currentBooksList = new ArrayList<>();
+    private LinearLayout container;
+
+    private final List<LibraryBook> allBooksInLibrary = new ArrayList<>();
+    private LibraryApi api;
+
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingSearch = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_library_detail);
 
-        libraryId = getIntent().getStringExtra("library_id");
-        if (libraryId == null) {
-            showError("Library ID not found");
+        // 1. Encontra a Toolbar do teu XML
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        // 2. Define-a como a barra de ação
+        setSupportActionBar(toolbar);
+
+        container = findViewById(R.id.containerBooksData);
+
+        // Inicializa a API
+        api = RetrofitClient.getClient("http://193.136.62.24/v1/").create(LibraryApi.class);
+
+        Intent i = getIntent();
+        libraryId = (i != null) ? i.getStringExtra("library_id") : null;
+
+        // --- CORREÇÃO APLICADA ---
+        // 3. Obtém o NOME da biblioteca da Intent
+        String libraryName = (i != null) ? i.getStringExtra("library_name") : "Livros"; // "Livros" é o título padrão
+
+        // 4. Define o nome da biblioteca como o título da barra
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(libraryName);
+        }
+        // --- FIM DA CORREÇÃO ---
+
+        fetchBooksForLibrary(libraryId);
+    }
+
+    /* ===================== MENU / LUPA ===================== */
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Infla o menu (menu_libraries.xml) que o teu XML definiu
+        getMenuInflater().inflate(R.menu.menu_libraries, menu);
+
+        // Encontra o item de pesquisa DENTRO DO MENU
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setQueryHint("Pesquisar livro...");
+
+        // Define os listeners
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (pendingSearch != null) searchHandler.removeCallbacks(pendingSearch);
+                startTypeahead(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (pendingSearch != null) searchHandler.removeCallbacks(pendingSearch);
+                pendingSearch = () -> startTypeahead(newText);
+                searchHandler.postDelayed(pendingSearch, 300);
+                return true;
+            }
+        });
+
+        // Listener para quando a pesquisa é fechada (clicando no 'X' ou 'back')
+        searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+            @Override public boolean onMenuItemActionExpand(MenuItem item) { return true; } // Permite abrir
+
+            @Override public boolean onMenuItemActionCollapse(MenuItem item) {
+                // Quando fecha, restaura a lista completa
+                displayBooks(allBooksInLibrary);
+                return true; // Permite fechar
+            }
+        });
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+
+    /* ===================== API: LIVROS DA BIBLIOTECA ===================== */
+
+    private void fetchBooksForLibrary(String id) {
+        if (TextUtils.isEmpty(id)) {
+            info("Sem ID de biblioteca.");
             return;
         }
 
-        // Vai buscar os livros
-        fetchBooks(libraryId);
-
-        // Configura a barra de navegação inferior
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNavBooks);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.action_add) {
-                // Botão "Adicionar"
-                showAddBookDialog();
-                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
-                return false;
-
-            } else if (id == R.id.nav_loans) {
-                // Botão "Empréstimo"
-                showLoanDialog(libraryId);
-                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
-                return false;
-
-            } else if (id == R.id.action_edit) {
-                openBookEditFlow(); // ← em vez do Toast
-                bottomNav.getMenu().findItem(R.id.action_edit).setChecked(false);
-                return false;
-            }
-
-
-            return false;
-        });
-    }
-
-    /** ===================== 1. LISTAR LIVROS ===================== **/
-
-    private void fetchBooks(String libraryId) {
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
-        api.getBooksByLibraryId(libraryId).enqueue(new Callback<List<LibraryBook>>() {
+        api.getBooksByLibraryId(id).enqueue(new Callback<List<LibraryBook>>() {
             @Override
             public void onResponse(Call<List<LibraryBook>> call, Response<List<LibraryBook>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // ATUALIZADO: Guarda a lista de livros
-                    currentBooksList.clear();
-                    currentBooksList.addAll(response.body());
-
-                    // Mostra os livros (agora usa a lista guardada)
-                    displayBooks(currentBooksList);
+                    allBooksInLibrary.clear();
+                    allBooksInLibrary.addAll(response.body());
+                    displayBooks(allBooksInLibrary);
                 } else {
-                    showError("Failed to load books (HTTP " + response.code() + ")");
+                    info("Erro HTTP: " + response.code());
                 }
             }
+
             @Override
             public void onFailure(Call<List<LibraryBook>> call, Throwable t) {
-                showError("Error: " + t.getMessage());
+                info("Falha: " + t.getMessage());
             }
         });
     }
 
+    /* ===================== UI LISTA ===================== */
+
     private void displayBooks(List<LibraryBook> books) {
-        LinearLayout container = findViewById(R.id.containerBooksData);
         container.removeAllViews();
 
         int pad = (int) (12 * getResources().getDisplayMetrics().density);
         int imgW = (int) (64 * getResources().getDisplayMetrics().density);
         int imgH = (int) (96 * getResources().getDisplayMetrics().density);
 
-        for (LibraryBook libraryBook : books) {
-            Book b = libraryBook.getBook();
+        if (books.isEmpty()) {
+            TextView tv = new TextView(this);
+            tv.setText("Nenhum livro encontrado.");
+            tv.setPadding(pad, pad, pad, pad);
+            container.addView(tv);
+            return;
+        }
+
+        for (LibraryBook lb : books) {
+            Book b = lb.getBook();
 
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
@@ -131,44 +193,38 @@ public class LibraryDetailActivity extends AppCompatActivity {
             cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
             row.addView(cover);
 
-            fetchBookCover(libraryBook.getIsbn(), b, cover, libraryBook.getStock());
+            fetchBookCover(lb.getIsbn(), b, cover);
 
             TextView tv = new TextView(this);
             tv.setTextSize(16);
             tv.setTextColor(getResources().getColor(android.R.color.black));
 
-            String author = (b != null) ? b.getAuthorDisplay() : "Unknown";
+            String title  = (b != null && b.getTitle() != null) ? b.getTitle() : "N/A";
+            String author = (b != null) ? b.getAuthorDisplay() : "Unknown"; // Usa o método seguro
 
-            tv.setText(
-                    "Title: " + (b != null && b.getTitle() != null ? b.getTitle() : "N/A") + "\n" +
-                            "Author: " + author + "\n" +
-                            "Stock: " + libraryBook.getStock()
-            );
+            tv.setText("Title: " + title + "\n" +
+                    "Author: " + author + "\n" +
+                    "Stock: " + lb.getStock());
             row.addView(tv);
 
-            // ----- LISTENERS -----
-            // clique curto = ver descrição
-            row.setOnClickListener(v -> showBookDescription(libraryBook));
-
-            // (O clique longo foi removido, pois o botão "Editar" faz agora essa função)
+            row.setOnClickListener(v -> showBookDescription(lb));
         }
     }
 
-    private void fetchBookCover(String isbn, Book book, ImageView target, int stock) {
+    private void fetchBookCover(String isbn, Book book, ImageView target) {
         String imageName = null;
-
-        // CORREÇÃO (de conversas anteriores): Usa o objeto Cover
         if (book != null && book.getCover() != null) {
-            imageName = book.getCover().getImageName();
+            imageName = book.getCover().getImageName(); // Usa o objeto Cover
         }
 
-        // Fallback: tenta por ISBN
         if ((imageName == null || imageName.isEmpty()) && isbn != null && !isbn.isEmpty()) {
-            imageName = isbn + ".jpg"; // ou .png
+            imageName = isbn + ".jpg";
         }
 
-        String url = ApiConstants.coverUrl(imageName);
-        Log.d("LibraryDetailActivity", "Loading cover from URL: " + url);
+        String url = (imageName != null &&
+                (imageName.startsWith("http://") || imageName.startsWith("https://")))
+                ? imageName
+                : ApiConstants.coverUrl(imageName);
 
         Glide.with(this)
                 .load(url)
@@ -178,25 +234,23 @@ public class LibraryDetailActivity extends AppCompatActivity {
                 .into(target);
     }
 
-    /** ===================== 2. VER DESCRIÇÃO ===================== **/
+    /* ===================== DESCRIÇÃO ===================== */
 
     private void showBookDescription(LibraryBook lb) {
-        Book b = (lb != null) ? lb.getBook() : null;
-        String title = (b != null && b.getTitle() != null) ? b.getTitle() : "Book";
+        Book b = lb != null ? lb.getBook() : null;
+        String title = (b != null && b.getTitle()!=null) ? b.getTitle() : "Book";
 
         if (b != null && b.getDescription() != null && !b.getDescription().trim().isEmpty()) {
             showDescDialog(title, b.getDescription());
             return;
         }
 
-        LibraryApi api = RetrofitClient
-                .getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
         Call<Book> call = null;
+
         if (b != null && b.getIsbn() != null && !b.getIsbn().trim().isEmpty()) {
-            call = api.getBookByIsbn(b.getIsbn().trim());
-        } else if (lb != null && lb.getBookId() != null && !lb.getBookId().trim().isEmpty()) {
+            call = api.loadBook(b.getIsbn().trim(), false);
+        }
+        else if (lb != null && lb.getBookId() != null && !lb.getBookId().trim().isEmpty()) {
             call = api.getBookById(lb.getBookId().trim());
         }
 
@@ -215,20 +269,17 @@ public class LibraryDetailActivity extends AppCompatActivity {
         call.enqueue(new Callback<Book>() {
             @Override public void onResponse(Call<Book> c, Response<Book> r) {
                 loading.dismiss();
-                if (r.isSuccessful() && r.body() != null) {
-                    String desc = r.body().getDescription();
-                    if (desc != null && !desc.trim().isEmpty()) {
-                        showDescDialog(title, desc);
-                    } else {
-                        showDescDialog(title, "No description available.");
-                    }
+                if (r.isSuccessful() && r.body() != null &&
+                        r.body().getDescription() != null &&
+                        !r.body().getDescription().trim().isEmpty()) {
+                    showDescDialog(title, r.body().getDescription());
                 } else {
-                    showDescDialog(title, "Failed to load description (HTTP " + r.code() + ").");
+                    showDescDialog(title, "No description available.");
                 }
             }
             @Override public void onFailure(Call<Book> c, Throwable t) {
                 loading.dismiss();
-                showDescDialog(title, "Network error: " + t.getMessage());
+                showDescDialog(title, "Failed to load description.\n" + t.getMessage());
             }
         });
     }
@@ -241,242 +292,76 @@ public class LibraryDetailActivity extends AppCompatActivity {
                 .show();
     }
 
+    /* ===================== TYPEAHEAD (lupa) ===================== */
 
-    /** ===================== 3. ADICIONAR LIVRO ===================== **/
-
-    private void showAddBookDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-
-        final EditText isbnInput = new EditText(this);
-        isbnInput.setHint("Enter ISBN");
-        layout.addView(isbnInput);
-
-        final EditText stockInput = new EditText(this);
-        stockInput.setHint("Enter Stock");
-        stockInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        layout.addView(stockInput);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Add New Book")
-                .setView(layout)
-                .setPositiveButton("Add", (d, w) -> {
-                    String isbn = isbnInput.getText().toString().trim();
-                    int stock = stockInput.getText().toString().isEmpty() ? 0 :
-                            Integer.parseInt(stockInput.getText().toString().trim());
-                    addBookToLibrary(isbn, stock);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void addBookToLibrary(String isbn, int stock) {
-        if (libraryId == null) { showError("Library ID missing"); return; }
-
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-
-        CreateLibraryBookRequest req = new CreateLibraryBookRequest(stock);
-
-        api.addBook(libraryId, isbn, req).enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(LibraryDetailActivity.this, "Book added!", Toast.LENGTH_SHORT).show();
-                    fetchBooks(libraryId);
-                } else {
-                    showError("Failed to add book (HTTP " + response.code() + ")");
-                }
-            }
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                showError("Error: " + t.getMessage());
-            }
-        });
-    }
-
-
-    /** =====================================================================
-     * FLUXO DE EDIÇÃO/ELIMINAÇÃO (Iniciado pelo botão "Editar" da barra)
-     * ===================================================================== **/
-
-    /**
-     * PASSO 1 (NOVO): Mostra um pop-up com todos os livros da biblioteca.
-     */
-    private void openBookEditFlow() {
-        if (currentBooksList == null || currentBooksList.isEmpty()) {
-            showError("Não há livros para editar.");
+    private void startTypeahead(String raw) {
+        String q = raw == null ? "" : raw.trim();
+        if (q.isEmpty()) {
+            displayBooks(allBooksInLibrary);
             return;
         }
 
-        // Cria um array de strings com os títulos dos livros
-        String[] bookTitles = new String[currentBooksList.size()];
-        for (int i = 0; i < currentBooksList.size(); i++) {
-            bookTitles[i] = getSafeBookTitle(currentBooksList.get(i));
-        }
+        filterLocally(q);
 
-        // Mostra o pop-up
-        new AlertDialog.Builder(this)
-                .setTitle("Escolher livro para gerir")
-                .setItems(bookTitles, (dialog, which) -> {
-                    // "which" é a posição do livro em que o utilizador clicou
-                    LibraryBook selectedBook = currentBooksList.get(which);
-
-                    // Chama o menu "hub" (Passo 2) para o livro escolhido
-                    showEditDeleteBookDialog(selectedBook);
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
-    }
-
-    /**
-     *
-     * Mostra as opções "Editar"  um livro.
-     */
-    private void showEditDeleteBookDialog(LibraryBook libraryBook) {
-        String title = getSafeBookTitle(libraryBook);
-        String[] actions = {"Editar Stock"};
-
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setItems(actions, (dialog, which) -> {
-                    if (which == 0) {
-                        // "Editar Stock"
-                        showEditStockDialog(libraryBook); // (Renomeei o teu método)
-
-                    }
-                })
-                .setNegativeButton("Fechar", null)
-                .show();
-    }
-
-    /**
-     * PASSO 3a: Editar Stock
-     */
-    private void showEditStockDialog(LibraryBook lb) {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-
-        final EditText stockInput = new EditText(this);
-        stockInput.setHint("New Stock");
-        stockInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        stockInput.setText(String.valueOf(lb.getStock()));
-        layout.addView(stockInput);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Update Book Stock")
-                .setView(layout)
-                .setPositiveButton("Update", (d, w) -> {
-                    int newStock = Integer.parseInt(stockInput.getText().toString().trim());
-                    updateBookInLibrary(lb.getIsbn(), newStock);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void updateBookInLibrary(String isbn, int newStock) {
-        if (libraryId == null) { showError("Library ID missing"); return; }
-
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
-        CreateLibraryBookRequest req = new CreateLibraryBookRequest(newStock);
-
-        api.updateBook(libraryId, isbn, req).enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(LibraryDetailActivity.this, "Book updated!", Toast.LENGTH_SHORT).show();
-                    fetchBooks(libraryId); // Atualiza a lista
+        api.typeaheadBooks(q).enqueue(new Callback<List<Book>>() {
+            @Override public void onResponse(Call<List<Book>> call, Response<List<Book>> resp) {
+                if (resp.isSuccessful() && resp.body() != null) {
+                    applyTypeaheadBooks(q, resp.body());
                 } else {
-                    showError("Failed to update (HTTP " + response.code() + ")");
+                    Log.w(TAG, "Typeahead API failed, sticking to local filter.");
                 }
             }
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                showError("Error: " + t.getMessage());
+            @Override public void onFailure(Call<List<Book>> call, Throwable t) {
+                Log.e(TAG, "Typeahead API failure: " + t.getMessage());
             }
         });
     }
 
-    private void showLoanDialog(String libraryId) {
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        View v = getLayoutInflater().inflate(R.layout.dialog_checkout, null);
+    private void applyTypeaheadBooks(String q, List<Book> suggestions) {
+        HashSet<String> titles = new HashSet<>();
+        HashSet<String> isbns  = new HashSet<>();
+        for (Book b : suggestions) {
+            if (b == null) continue;
+            if (b.getTitle() != null) titles.add(b.getTitle().toLowerCase(Locale.ROOT));
+            if (b.getIsbn()  != null) isbns.add(b.getIsbn().toLowerCase(Locale.ROOT));
+        }
+        List<LibraryBook> filtered = new ArrayList<>();
+        String ql = q.toLowerCase(Locale.ROOT);
+        for (LibraryBook lb : allBooksInLibrary) {
+            Book b = lb.getBook();
+            String t = b != null && b.getTitle()!=null ? b.getTitle().toLowerCase(Locale.ROOT) : "";
+            String i = b != null && b.getIsbn()!=null  ? b.getIsbn().toLowerCase(Locale.ROOT)  : "";
 
-        EditText etLibraryId = v.findViewById(R.id.etLibraryId);
-        EditText etBookId = v.findViewById(R.id.etBookId);
-        EditText etUserName = v.findViewById(R.id.etUserName);
-
-        // Preenche automaticamente o Library ID e bloqueia edição
-        etLibraryId.setText(libraryId);
-        etLibraryId.setEnabled(false);
-
-        b.setTitle("Novo Empréstimo");
-        b.setView(v);
-        b.setPositiveButton("Confirmar", (d, w) -> {
-            String bookId = etBookId.getText().toString().trim();
-            String userName = etUserName.getText().toString().trim();
-
-            if (bookId.isEmpty() || userName.isEmpty()) {
-                Toast.makeText(this, "Preenche Book ID e Nome.", Toast.LENGTH_SHORT).show();
-                return;
+            if (titles.contains(t) || isbns.contains(i) || t.contains(ql)) {
+                filtered.add(lb);
             }
-
-            LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                    .create(LibraryApi.class);
-            api.checkOutBook(libraryId, bookId, userName)
-                    .enqueue(new retrofit2.Callback<Library>() {
-                        @Override
-                        public void onResponse(Call<Library> call, Response<Library> response) {
-                            if (response.isSuccessful() && response.body() != null) {
-                                Library lib = response.body();
-                                Toast.makeText(LibraryDetailActivity.this,
-                                        "Empréstimo registado na biblioteca: " + lib.getName(),
-                                        Toast.LENGTH_LONG).show();
-                                fetchBooks(libraryId);
-                            } else {
-                                Toast.makeText(LibraryDetailActivity.this,
-                                        "Falha (HTTP " + response.code() + ")", Toast.LENGTH_LONG).show();
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<Library> call, Throwable t) {
-                            Toast.makeText(LibraryDetailActivity.this,
-                                    "Erro: " + t.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
-
-        });
-        b.setNegativeButton("Cancelar", null);
-        b.show();
+        }
+        displayBooks(filtered);
     }
 
-    private String getSafeBookTitle(LibraryBook lb) {
-        if (lb == null) return "Livro";
-        Book b = lb.getBook();
-        if (b != null && b.getTitle() != null && !b.getTitle().trim().isEmpty()) {
-            return b.getTitle().trim();
+    private void filterLocally(String q) {
+        String ql = q.toLowerCase(Locale.ROOT);
+        List<LibraryBook> filtered = new ArrayList<>();
+        for (LibraryBook lb : allBooksInLibrary) {
+            Book b = lb.getBook();
+            String title = b != null && b.getTitle()!=null ? b.getTitle().toLowerCase(Locale.ROOT) : "";
+            String author = (b != null) ? b.getAuthorDisplay().toLowerCase(Locale.ROOT) : ""; // Usa o método seguro
+
+            if (title.contains(ql) || author.contains(ql)) {
+                filtered.add(lb);
+            }
         }
-        // alternativas úteis quando não há título
-        if (lb.getIsbn() != null && !lb.getIsbn().trim().isEmpty()) {
-            return "ISBN " + lb.getIsbn().trim();
-        }
-        if (lb.getBookId() != null && !lb.getBookId().trim().isEmpty()) {
-            return "Livro " + lb.getBookId().trim();
-        }
-        return "Livro";
+        displayBooks(filtered);
     }
 
+    /* ===================== UTIL ===================== */
 
-    /** ===================== AUX ===================== **/
-    private void showError(String msg) {
+    private void info(String msg) {
+        Log.d(TAG, msg);
         new AlertDialog.Builder(this)
-                .setTitle("Error")
+                .setTitle("Info")
                 .setMessage(msg)
                 .setPositiveButton("OK", null)
                 .show();
-        Log.e("LibraryDetailActivity", msg);
     }
 }

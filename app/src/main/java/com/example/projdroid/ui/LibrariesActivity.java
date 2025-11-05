@@ -93,7 +93,11 @@ public class LibrariesActivity extends AppCompatActivity {
         // Toolbar
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        // O teu título original era "DSSMV..." por isso esta linha está correta
+        // Se quiseres que diga "Bibliotecas", podes descomentar a linha abaixo
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+        // getSupportActionBar().setTitle("Bibliotecas");
+
         // Bottom Navigation
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -223,6 +227,11 @@ public class LibrariesActivity extends AppCompatActivity {
             libraryView.setOnClickListener(v -> {
                 Intent intent = new Intent(LibrariesActivity.this, LibraryDetailActivity.class);
                 intent.putExtra("library_id", lib.getId());
+
+                // --- CORREÇÃO APLICADA ---
+                intent.putExtra("library_name", lib.getName()); // Envia o nome
+                // --- FIM DA CORREÇÃO ---
+
                 startActivity(intent);
             });
 
