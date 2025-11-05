@@ -42,11 +42,11 @@ public interface LibraryApi {
             @Query("userId") String userId
     );
 
-    @POST("library/{libraryId}/book/{isbn}/checkout")
+    @POST("library/{libraryId}/book/{bookId}/checkout")
     Call<Library> checkOutBook(
             @Path("libraryId") String libraryId,
-            @Path("isbn") String isbn,
-            @Query("userId") String username
+            @Path("isbn") String bookId,
+            @Query("userId") String userName
     );
 
 

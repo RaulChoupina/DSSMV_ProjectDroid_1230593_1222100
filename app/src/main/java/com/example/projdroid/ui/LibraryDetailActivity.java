@@ -64,9 +64,11 @@ public class LibraryDetailActivity extends AppCompatActivity {
                 return false;
 
             } else if (id == R.id.action_edit) {
-                Toast.makeText(this, "Função Editar ainda não implementada", Toast.LENGTH_SHORT).show();
+                openBookEditFlow(); // ← em vez do Toast
+                bottomNav.getMenu().findItem(R.id.action_edit).setChecked(false);
                 return false;
             }
+
 
             return false;
         });
@@ -398,9 +400,74 @@ public class LibraryDetailActivity extends AppCompatActivity {
         });
     }
 
+    private void showLoanDialog(String libraryId) {
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        View v = getLayoutInflater().inflate(R.layout.dialog_checkout, null);
 
+        EditText etLibraryId = v.findViewById(R.id.etLibraryId);
+        EditText etBookId = v.findViewById(R.id.etBookId);
+        EditText etUserName = v.findViewById(R.id.etUserName);
 
+        // Preenche automaticamente o Library ID e bloqueia edição
+        etLibraryId.setText(libraryId);
+        etLibraryId.setEnabled(false);
 
+        b.setTitle("Novo Empréstimo");
+        b.setView(v);
+        b.setPositiveButton("Confirmar", (d, w) -> {
+            String bookId = etBookId.getText().toString().trim();
+            String userName = etUserName.getText().toString().trim();
+
+            if (bookId.isEmpty() || userName.isEmpty()) {
+                Toast.makeText(this, "Preenche Book ID e Nome.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
+                    .create(LibraryApi.class);
+            api.checkOutBook(libraryId, bookId, userName)
+                    .enqueue(new retrofit2.Callback<Library>() {
+                        @Override
+                        public void onResponse(Call<Library> call, Response<Library> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                Library lib = response.body();
+                                Toast.makeText(LibraryDetailActivity.this,
+                                        "Empréstimo registado na biblioteca: " + lib.getName(),
+                                        Toast.LENGTH_LONG).show();
+                                fetchBooks(libraryId);
+                            } else {
+                                Toast.makeText(LibraryDetailActivity.this,
+                                        "Falha (HTTP " + response.code() + ")", Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Library> call, Throwable t) {
+                            Toast.makeText(LibraryDetailActivity.this,
+                                    "Erro: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+        });
+        b.setNegativeButton("Cancelar", null);
+        b.show();
+    }
+
+    private String getSafeBookTitle(LibraryBook lb) {
+        if (lb == null) return "Livro";
+        Book b = lb.getBook();
+        if (b != null && b.getTitle() != null && !b.getTitle().trim().isEmpty()) {
+            return b.getTitle().trim();
+        }
+        // alternativas úteis quando não há título
+        if (lb.getIsbn() != null && !lb.getIsbn().trim().isEmpty()) {
+            return "ISBN " + lb.getIsbn().trim();
+        }
+        if (lb.getBookId() != null && !lb.getBookId().trim().isEmpty()) {
+            return "Livro " + lb.getBookId().trim();
+        }
+        return "Livro";
+    }
 
 
     /** ===================== AUX ===================== **/
