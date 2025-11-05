@@ -30,8 +30,7 @@ public interface LibraryApi {
 
 
 
-    @GET("user/checked-out")
-    Call<List<LibraryBook>> getBooksByUser(@Query("userId") String username);
+
 
     @POST("library")
     Call<Library> addLibrary(@Body Library library);
@@ -47,7 +46,7 @@ public interface LibraryApi {
     Call<Library> checkOutBook(
             @Path("libraryId") String libraryId,
             @Path("isbn") String isbn,
-            @Query("userId") String userId
+            @Query("userId") String username
     );
 
 

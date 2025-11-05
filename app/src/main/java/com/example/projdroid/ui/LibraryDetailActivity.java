@@ -3,12 +3,14 @@ package com.example.projdroid.ui;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.projdroid.R;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.api.RetrofitClient;
 import com.example.projdroid.models.Book;
+import com.example.projdroid.models.Library;
 import com.example.projdroid.models.LibraryBook;
 import com.example.projdroid.models.CreateLibraryBookRequest;
 import java.util.List;
@@ -48,12 +50,20 @@ public class LibraryDetailActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.action_add) {
-                // Este é o botão "+" no bottomNav
+                // Botão "Adicionar"
                 showAddBookDialog();
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
                 return false;
-            } else if (id == R.id.nav_home) {
-                return true;
+
+            } else if (id == R.id.nav_loans) {
+                // Botão "Empréstimo"
+                showLoanDialog(libraryId);
+                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
+                return false;
+
+            } else if (id == R.id.action_edit) {
+                Toast.makeText(this, "Função Editar ainda não implementada", Toast.LENGTH_SHORT).show();
+                return false;
             }
 
             return false;
@@ -264,6 +274,61 @@ public class LibraryDetailActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void showLoanDialog(String libraryId) {
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        View v = getLayoutInflater().inflate(R.layout.dialog_checkout, null);
+
+        EditText etLibraryId = v.findViewById(R.id.etLibraryId);
+        EditText etBookId = v.findViewById(R.id.etBookId);
+        EditText etUserName = v.findViewById(R.id.etUserName);
+
+        // Preenche automaticamente o Library ID e bloqueia edição
+        etLibraryId.setText(libraryId);
+        etLibraryId.setEnabled(false);
+
+        b.setTitle("Novo Empréstimo");
+        b.setView(v);
+        b.setPositiveButton("Confirmar", (d, w) -> {
+            String bookId = etBookId.getText().toString().trim();
+            String userName = etUserName.getText().toString().trim();
+
+            if (bookId.isEmpty() || userName.isEmpty()) {
+                Toast.makeText(this, "Preenche Book ID e Nome.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
+                    .create(LibraryApi.class);
+            api.checkOutBook(libraryId, bookId, userName)
+                    .enqueue(new retrofit2.Callback<Library>() {
+                        @Override
+                        public void onResponse(Call<Library> call, Response<Library> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                Library lib = response.body();
+                                Toast.makeText(LibraryDetailActivity.this,
+                                        "Empréstimo registado na biblioteca: " + lib.getName(),
+                                        Toast.LENGTH_LONG).show();
+                                fetchBooks(libraryId);
+                            } else {
+                                Toast.makeText(LibraryDetailActivity.this,
+                                        "Falha (HTTP " + response.code() + ")", Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Library> call, Throwable t) {
+                            Toast.makeText(LibraryDetailActivity.this,
+                                    "Erro: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+        });
+        b.setNegativeButton("Cancelar", null);
+        b.show();
+    }
+
+
 
     /** ===================== AUX ===================== **/
     private void showError(String msg) {

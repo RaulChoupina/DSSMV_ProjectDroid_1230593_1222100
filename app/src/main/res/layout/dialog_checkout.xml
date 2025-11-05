@@ -1,0 +1,38 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:padding="20dp"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+    <TextView
+            android:id="@+id/tvInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Novo Empréstimo"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingBottom="8dp" />
+
+    <EditText
+            android:id="@+id/etBookId"
+            android:hint="Book ID"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:inputType="text" />
+
+    <EditText
+            android:id="@+id/etLibraryId"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Library ID"
+            android:inputType="text"
+            android:layout_marginBottom="10dp" />
+
+    <EditText
+            android:id="@+id/etUserName"
+            android:hint="Nome do utilizador"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:inputType="textPersonName" />
+</LinearLayout>
