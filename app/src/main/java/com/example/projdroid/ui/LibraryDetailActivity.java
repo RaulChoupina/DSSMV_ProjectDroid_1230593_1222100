@@ -3,6 +3,7 @@ package com.example.projdroid.ui;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.projdroid.R;
@@ -10,6 +11,8 @@ import com.example.projdroid.api.ApiConstants;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.api.RetrofitClient;
 import com.example.projdroid.models.Book;
+import com.example.projdroid.models.Library;
+import com.example.projdroid.models.LibraryBook;
 import com.example.projdroid.models.CreateLibraryBookRequest;
 import com.example.projdroid.models.LibraryBook;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -49,20 +52,19 @@ public class LibraryDetailActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.action_add) {
-                // Botão "+"
+                // Botão "Adicionar"
                 showAddBookDialog();
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
                 return false;
 
-            } else if (id == R.id.nav_home) {
-                // Botão "Home"
-                return true;
+            } else if (id == R.id.nav_loans) {
+                // Botão "Empréstimo"
+                showLoanDialog(libraryId);
+                bottomNav.getMenu().findItem(R.id.nav_loans).setChecked(false);
+                return false;
 
-            // ADICIONADO: Botão "Editar"
-            } else if (id == R.id.action_edit) { // <<< CONFIRMA ESTE ID
-                // Chama o novo fluxo de edição que lista os livros
-                openBookEditFlow();
-                bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
+            } else if (id == R.id.action_edit) {
+                Toast.makeText(this, "Função Editar ainda não implementada", Toast.LENGTH_SHORT).show();
                 return false;
             }
 
@@ -398,65 +400,62 @@ public class LibraryDetailActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * PASSO 3b: Apagar Livro (Confirmação)
-     */
-    private void confirmDeleteBook(LibraryBook libraryBook) {
-        String title = getSafeBookTitle(libraryBook);
+    private void showLoanDialog(String libraryId) {
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
+        View v = getLayoutInflater().inflate(R.layout.dialog_checkout, null);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Apagar Livro")
-                .setMessage("Queres mesmo apagar \"" + title + "\" desta biblioteca?")
-                .setPositiveButton("Apagar", (d, w) -> {
-                    deleteBookFromLibrary(libraryBook.getIsbn());
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
-    }
+        EditText etLibraryId = v.findViewById(R.id.etLibraryId);
+        EditText etBookId = v.findViewById(R.id.etBookId);
+        EditText etUserName = v.findViewById(R.id.etUserName);
 
-    /**
-     * PASSO 3c: Apagar Livro (Chamada à API)
-     */
-    private void deleteBookFromLibrary(String isbn) {
-        if (libraryId == null) { showError("Library ID missing"); return; }
-        if (isbn == null) { showError("Book ISBN missing"); return; }
+        // Preenche automaticamente o Library ID e bloqueia edição
+        etLibraryId.setText(libraryId);
+        etLibraryId.setEnabled(false);
 
-        LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
-                .create(LibraryApi.class);
+        b.setTitle("Novo Empréstimo");
+        b.setView(v);
+        b.setPositiveButton("Confirmar", (d, w) -> {
+            String bookId = etBookId.getText().toString().trim();
+            String userName = etUserName.getText().toString().trim();
 
-        // Assume que adicionaste 'deleteBook' à LibraryApi.java
-        Call<Void> call = api.deleteBook(libraryId, isbn);
-
-        call.enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(LibraryDetailActivity.this, "Livro apagado!", Toast.LENGTH_SHORT).show();
-                    fetchBooks(libraryId); // Atualiza a lista
-                } else {
-                    showError("Falha ao apagar (HTTP " + response.code() + ")");
-                }
+            if (bookId.isEmpty() || userName.isEmpty()) {
+                Toast.makeText(this, "Preenche Book ID e Nome.", Toast.LENGTH_SHORT).show();
+                return;
             }
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                showError("Erro de rede: " + t.getMessage());
-            }
+
+            LibraryApi api = RetrofitClient.getClient("http://193.136.62.24/v1/")
+                    .create(LibraryApi.class);
+            api.checkOutBook(libraryId, bookId, userName)
+                    .enqueue(new retrofit2.Callback<Library>() {
+                        @Override
+                        public void onResponse(Call<Library> call, Response<Library> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                Library lib = response.body();
+                                Toast.makeText(LibraryDetailActivity.this,
+                                        "Empréstimo registado na biblioteca: " + lib.getName(),
+                                        Toast.LENGTH_LONG).show();
+                                fetchBooks(libraryId);
+                            } else {
+                                Toast.makeText(LibraryDetailActivity.this,
+                                        "Falha (HTTP " + response.code() + ")", Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Library> call, Throwable t) {
+                            Toast.makeText(LibraryDetailActivity.this,
+                                    "Erro: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+
         });
+        b.setNegativeButton("Cancelar", null);
+        b.show();
     }
 
 
-    /** ===================== AUXILIARES ===================== **/
 
-    /**
-     * Método auxiliar para obter o título de um livro de forma segura
-     */
-    private String getSafeBookTitle(LibraryBook lb) {
-        if (lb != null && lb.getBook() != null && lb.getBook().getTitle() != null) {
-            return lb.getBook().getTitle();
-        }
-        return "Livro sem título";
-    }
-
+    /** ===================== AUX ===================== **/
     private void showError(String msg) {
         new AlertDialog.Builder(this)
                 .setTitle("Error")
