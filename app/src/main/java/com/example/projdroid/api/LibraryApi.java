@@ -27,27 +27,31 @@ public interface LibraryApi {
     Call<Book> loadBook(@Path("isbn") String isbn, @Query("persist") boolean persist);
 
 
-
-
-
-
-
     @POST("library")
     Call<Library> addLibrary(@Body Library library);
 
-    @POST("library/{libraryId}/book/{isbn}/checkin")
-    Call<Library> checkInBook(
-            @Path("libraryId") String libraryId,
-            @Path("isbn") String isbn,
-            @Query("userId") String userId
-    );
-
+    // --- CHECKOUT (emprestar) ---
     @POST("library/{libraryId}/book/{bookId}/checkout")
     Call<Library> checkOutBook(
             @Path("libraryId") String libraryId,
-            @Path("isbn") String bookId,
+            @Path("bookId") String bookId,
             @Query("userId") String userName
     );
+
+    // --- CHECKIN (devolver) ---
+    @POST("library/{libraryId}/book/{bookId}/checkin")
+    Call<Void> checkinBook(
+            @Path("libraryId") String libraryId,
+            @Path("bookId") String bookId,
+            @Query("userId") String userId
+    );
+
+    // --- EXTENDER EMPRÉSTIMO ---
+    @POST("checkout/{id}/extend")
+    Call<Library> extendCheckout(
+            @Path("id") String id
+    );
+
 
 
     @PUT("library/{id}")
