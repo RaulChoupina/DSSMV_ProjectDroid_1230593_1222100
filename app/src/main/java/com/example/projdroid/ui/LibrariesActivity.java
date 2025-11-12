@@ -46,7 +46,7 @@ public class LibrariesActivity extends AppCompatActivity {
         return BASE_URL + "assets/cover/" + imageName.trim();
     }
 
-    // --- download e colocação no ImageView (sem Glide) ---
+    // --- download e colocação no ImageView
     private void loadCoverInto(android.widget.ImageView target, String url) {
         if (url == null) { target.setImageResource(R.drawable.cover_error); return; }
 
@@ -211,7 +211,7 @@ public class LibrariesActivity extends AppCompatActivity {
             libraryView.setTextColor(getResources().getColor(android.R.color.white)); // texto branco p/ contraste
             libraryView.setPadding(pad, pad, pad, pad);
 
-            // 👉 cor do cartão: verde se aberta, vermelho se fechada
+
             int bgRes = lib.isOpen()
                     ? R.drawable.library_item_background_open
                     : R.drawable.library_item_background_closed;
@@ -227,10 +227,8 @@ public class LibrariesActivity extends AppCompatActivity {
             libraryView.setOnClickListener(v -> {
                 Intent intent = new Intent(LibrariesActivity.this, LibraryDetailActivity.class);
                 intent.putExtra("library_id", lib.getId());
-
-                // --- CORREÇÃO APLICADA ---
                 intent.putExtra("library_name", lib.getName()); // Envia o nome
-                // --- FIM DA CORREÇÃO ---
+
 
                 startActivity(intent);
             });

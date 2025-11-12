@@ -1,9 +1,7 @@
 package com.example.projdroid.api;
 
-import com.example.projdroid.models.Book;
-import com.example.projdroid.models.Library;
-import com.example.projdroid.models.LibraryBook;
-import com.example.projdroid.models.CreateLibraryBookRequest;
+import com.example.projdroid.models.*;
+
 import java.util.List;
 
 import retrofit2.Call;
@@ -78,6 +76,21 @@ public interface LibraryApi {
     @GET("search/typeahead")
     Call<List<Book>> typeaheadBooks(@Query("query") String query);
 
+    @GET("book/{isbn}/review/recommended-count")
+    Call<RecommendedCountResponse> getRecommendedCount(@Path("isbn") String isbn);
 
+
+    @GET("user/checked-out")
+    Call<List<BookItem>> getCheckedOutBooks(@Query("username") String username);
+
+    @GET("user/checked-out")
+    Call<List<LibraryBook>> getBooksByUser(@Query("userId") String username);
+
+
+    @GET("user/checkout-history")
+
+    Call<List<BookItem>> getCheckoutHistory(@Query("username") String username);
 
 }
+
+

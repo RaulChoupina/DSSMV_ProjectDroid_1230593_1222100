@@ -36,5 +36,9 @@
                 android:name=".ui.LibraryDetailActivity"
                 android:exported="false" />
 
+        <activity
+                android:name=".ui.UserActivity"
+                android:exported="false" />
+
     </application>
 </manifest>
