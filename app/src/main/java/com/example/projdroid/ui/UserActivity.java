@@ -128,7 +128,12 @@ public class UserActivity extends AppCompatActivity {
             coverImageView.setPadding(8, 8, 8, 8);
             coverImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
-            fetchBookCover(libraryBook.getLibraryId(), book, coverImageView);
+            // Obter ISBN do LibraryBook ou do Book
+            String isbn = libraryBook.getIsbn();
+            if ((isbn == null || isbn.isEmpty()) && book != null) {
+                isbn = book.getIsbn();
+            }
+            fetchBookCover(isbn, book, coverImageView);
 
             // TextView para os detalhes
             TextView bookDetails = new TextView(this);
@@ -164,21 +169,32 @@ public class UserActivity extends AppCompatActivity {
     // performCheckIn(...)
 
 
-    // Método para buscar a capa (copiado do UserLinkActivity)
+    // Método para buscar a capa (seguindo a lógica do LibraryDetailActivity)
     private void fetchBookCover(String isbn, Book book, ImageView coverImageView) {
-        if (isbn != null && !isbn.isEmpty()) {
-            String coverUrl = "http://193.136.62.24/v1/assets/cover/" + isbn + "-L.jpg";
-            Log.d("UserActivity", "Cover URL for book: " + book.getTitle() + " - " + coverUrl);
+        String imageName = null;
+        
+        // Primeiro tenta obter do objeto Book (cover.imageName)
+        if (book != null && book.getCover() != null) {
+            imageName = book.getCover().getImageName();
+        }
+        
+        // Se não tiver, usa o ISBN para construir o nome da imagem
+        if ((imageName == null || imageName.isEmpty()) && isbn != null && !isbn.isEmpty()) {
+            imageName = isbn + ".jpg";
+        }
+        
+        if (imageName != null && !imageName.isEmpty()) {
+            String coverUrl = "http://193.136.62.24/v1/assets/cover/" + imageName;
+            Log.d("UserActivity", "Loading cover from URL: " + coverUrl + " for book: " + (book != null ? book.getTitle() : "null"));
 
             Glide.with(this)
                     .load(coverUrl)
-                    // Garante que tens estes drawables no teu projeto res/drawable
-                    .placeholder(R.drawable.cover_placeholder) // Usa o teu placeholder antigo
-                    .error(R.drawable.cover_error)        // Usa o teu erro antigo
+                    .placeholder(R.drawable.cover_placeholder)
+                    .error(R.drawable.cover_error)
                     .into(coverImageView);
         } else {
             coverImageView.setImageResource(R.drawable.cover_placeholder);
-            Log.d("UserActivity", "ISBN is null or empty for book: " + book.getTitle());
+            Log.d("UserActivity", "No imageName found for book: " + (book != null ? book.getTitle() : "null") + ", ISBN: " + isbn);
         }
     }
 
