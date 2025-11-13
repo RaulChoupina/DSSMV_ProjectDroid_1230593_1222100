@@ -21,10 +21,6 @@ public interface LibraryApi {
                        @Path("isbn") String isbn,
                        @Body CreateLibraryBookRequest request);
 
-    @GET("book/{isbn}")
-    Call<Book> loadBook(@Path("isbn") String isbn, @Query("persist") boolean persist);
-
-
     @POST("library")
     Call<Library> addLibrary(@Body Library library);
 
@@ -75,13 +71,6 @@ public interface LibraryApi {
 
     @GET("search/typeahead")
     Call<List<Book>> typeaheadBooks(@Query("query") String query);
-
-    @GET("book/{isbn}/review/recommended-count")
-    Call<RecommendedCountResponse> getRecommendedCount(@Path("isbn") String isbn);
-
-
-    @GET("user/checked-out")
-    Call<List<BookItem>> getCheckedOutBooks(@Query("username") String username);
 
     @GET("user/checked-out")
     Call<List<LibraryBook>> getBooksByUser(@Query("userId") String username);

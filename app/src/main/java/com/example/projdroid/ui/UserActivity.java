@@ -152,7 +152,7 @@ public class UserActivity extends AppCompatActivity {
 
             String dueDate = libraryBook.getDueDate();
             String formattedDate = dueDate.split("T")[0];
-            data.append("Due date: ").append(formattedDate).append("\n");
+            data.append("Data para entrega: ").append(formattedDate).append("\n");
             bookDetails.setText(data);
 
             // === LÓGICA DE CHECK-IN REMOVIDA ===
@@ -172,17 +172,17 @@ public class UserActivity extends AppCompatActivity {
     // Método para buscar a capa (seguindo a lógica do LibraryDetailActivity)
     private void fetchBookCover(String isbn, Book book, ImageView coverImageView) {
         String imageName = null;
-        
+
         // Primeiro tenta obter do objeto Book (cover.imageName)
         if (book != null && book.getCover() != null) {
             imageName = book.getCover().getImageName();
         }
-        
+
         // Se não tiver, usa o ISBN para construir o nome da imagem
         if ((imageName == null || imageName.isEmpty()) && isbn != null && !isbn.isEmpty()) {
             imageName = isbn + ".jpg";
         }
-        
+
         if (imageName != null && !imageName.isEmpty()) {
             String coverUrl = "http://193.136.62.24/v1/assets/cover/" + imageName;
             Log.d("UserActivity", "Loading cover from URL: " + coverUrl + " for book: " + (book != null ? book.getTitle() : "null"));
