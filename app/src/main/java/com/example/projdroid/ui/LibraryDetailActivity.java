@@ -29,7 +29,6 @@ import com.example.projdroid.models.Book;
 import com.example.projdroid.models.Library;
 import com.example.projdroid.models.LibraryBook;
 import com.example.projdroid.models.CreateLibraryBookRequest;
-import com.example.projdroid.models.RecommendedCountResponse; // NEW
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -56,47 +55,6 @@ public class LibraryDetailActivity extends AppCompatActivity {
     private LibraryApi api; // base v1
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable pendingSearch = null;
-
-    // ======== NEW: Shake detection state ========
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
-    private float accelCurrent = SensorManager.GRAVITY_EARTH;
-    private float accelLast = SensorManager.GRAVITY_EARTH;
-    private float shake = 0f;
-    private long lastShakeTs = 0L;
-
-    // ======== NEW: loading para recomendações ========
-    private AlertDialog loadingDialog;
-
-    // helper para resultados de recomendação
-    private static class RecItem {
-        final LibraryBook lb;
-        final int count;
-        RecItem(LibraryBook l, int c) { lb = l; count = c; }
-    }
-
-    // ======== NEW: listener do acelerómetro ========
-    private final SensorEventListener shakeListener = new SensorEventListener() {
-        @Override public void onSensorChanged(SensorEvent event) {
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-
-            accelLast = accelCurrent;
-            accelCurrent = (float) Math.sqrt(x * x + y * y + z * z);
-            float delta = accelCurrent - accelLast;
-            shake = shake * 0.9f + delta; // filtro simples
-
-            if (shake > 12f) { // limiar (ajusta se necessário)
-                long now = System.currentTimeMillis();
-                if (now - lastShakeTs > 1200) { // debouncing
-                    lastShakeTs = now;
-                    onShakeDetected();
-                }
-            }
-        }
-        @Override public void onAccuracyChanged(Sensor sensor, int accuracy) {}
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,26 +104,6 @@ public class LibraryDetailActivity extends AppCompatActivity {
             return false;
         });
 
-        // ======== NEW: inicializar sensores ========
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) {
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        }
-    }
-
-    // ======== NEW: registar/desregistar listener ========
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (sensorManager != null && accelerometer != null) {
-            sensorManager.registerListener(shakeListener, accelerometer, SensorManager.SENSOR_DELAY_UI);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (sensorManager != null) sensorManager.unregisterListener(shakeListener);
     }
 
     @Override
@@ -692,101 +630,4 @@ public class LibraryDetailActivity extends AppCompatActivity {
         Log.e(TAG, msg);
     }
 
-    // ======== NEW: Recomendações ao abanar ========
-
-    private void onShakeDetected() {
-        if (currentBooksList.isEmpty()) {
-            Toast.makeText(this, "Sem livros para recomendar.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        // limitar nº de chamadas
-        int limit = Math.min(12, currentBooksList.size());
-        List<LibraryBook> candidates = new ArrayList<>(currentBooksList.subList(0, limit));
-
-        showLoading("A procurar recomendações…");
-        fetchRecommendedCounts(candidates);
-    }
-
-    private void showLoading(String msg) {
-        if (loadingDialog != null && loadingDialog.isShowing()) loadingDialog.dismiss();
-        loadingDialog = new AlertDialog.Builder(this)
-                .setMessage(msg)
-                .setCancelable(false)
-                .create();
-        loadingDialog.show();
-    }
-
-    private void hideLoading() {
-        if (loadingDialog != null) loadingDialog.dismiss();
-    }
-
-    private void fetchRecommendedCounts(List<LibraryBook> books) {
-        List<RecItem> results = Collections.synchronizedList(new ArrayList<>());
-        AtomicInteger finished = new AtomicInteger(0);
-        int total = books.size();
-
-        for (LibraryBook lb : books) {
-            String isbn = lb.getIsbn();
-            if (isbn == null || isbn.trim().isEmpty()) {
-                results.add(new RecItem(lb, 0));
-                if (finished.incrementAndGet() == total) onAllRecommendedCountsDone(results);
-                continue;
-            }
-
-            api.getRecommendedCount(isbn.trim()).enqueue(new Callback<RecommendedCountResponse>() {
-                @Override public void onResponse(Call<RecommendedCountResponse> call,
-                                                 Response<RecommendedCountResponse> resp) {
-                    int c = 0;
-                    if (resp.isSuccessful() && resp.body() != null) {
-                        c = resp.body().getRecommendedCount();
-                    } else {
-                        Log.w(TAG, "recommended-count falhou para ISBN " + isbn + " (HTTP " + resp.code() + ")");
-                    }
-                    results.add(new RecItem(lb, c));
-                    if (finished.incrementAndGet() == total) onAllRecommendedCountsDone(results);
-                }
-
-                @Override public void onFailure(Call<RecommendedCountResponse> call, Throwable t) {
-                    Log.e(TAG, "recommended-count erro para ISBN " + isbn + ": " + t.getMessage());
-                    results.add(new RecItem(lb, 0));
-                    if (finished.incrementAndGet() == total) onAllRecommendedCountsDone(results);
-                }
-            });
-        }
-    }
-
-    private void onAllRecommendedCountsDone(List<RecItem> results) {
-        hideLoading();
-
-        Collections.sort(results, new Comparator<RecItem>() {
-            @Override public int compare(RecItem a, RecItem b) { return Integer.compare(b.count, a.count); }
-        });
-
-        List<RecItem> top = new ArrayList<>();
-        for (RecItem r : results) if (r.count > 0) top.add(r);
-
-        if (top.isEmpty()) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Recomendações")
-                    .setMessage("Nenhum livro com recomendações no momento. Tenta novamente mais tarde!")
-                    .setPositiveButton("OK", null)
-                    .show();
-            return;
-        }
-
-        int max = Math.min(5, top.size());
-        CharSequence[] items = new CharSequence[max];
-        for (int i = 0; i < max; i++) {
-            LibraryBook lb = top.get(i).lb;
-            Book b = lb.getBook();
-            String title = (b != null && b.getTitle()!=null) ? b.getTitle() : ("ISBN " + lb.getIsbn());
-            items[i] = title + " — " + top.get(i).count + " recomendações";
-        }
-
-        new AlertDialog.Builder(this)
-                .setTitle("Recomendados para ti")
-                .setItems(items, (d, which) -> showBookDescription(top.get(which).lb))
-                .setNegativeButton("Fechar", null)
-                .show();
-    }
 }

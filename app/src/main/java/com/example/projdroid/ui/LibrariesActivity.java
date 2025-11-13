@@ -5,9 +5,9 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 
 import com.example.projdroid.R;
+import com.example.projdroid.ui.MainActivity;
 import com.example.projdroid.api.LibraryApi;
 import com.example.projdroid.api.RetrofitClient;
 import com.example.projdroid.models.Library;
@@ -111,6 +112,10 @@ public class LibrariesActivity extends AppCompatActivity {
                 bottomNav.getMenu().findItem(R.id.nav_home).setChecked(true);
                 return false;
             } else if (id == R.id.nav_home) {
+                Intent intent = new Intent(LibrariesActivity.this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
                 return true;
             }
             return false;
