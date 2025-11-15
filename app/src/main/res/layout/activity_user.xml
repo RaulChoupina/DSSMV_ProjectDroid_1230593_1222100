@@ -47,15 +47,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-    <TextView
-            android:text="Checked-out (ativos)"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"/>
-
     <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -63,11 +54,47 @@
             android:layout_marginTop="8dp">
 
         <LinearLayout
-                android:id="@+id/containerBooks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"/>
+                android:orientation="vertical">
+
+            <!-- Secção: Checked-out (ativos) -->
+            <TextView
+                    android:id="@+id/txtCheckedOutTitle"
+                    android:text="Checked-out (ativos)"
+                    android:textStyle="bold"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"/>
+
+            <LinearLayout
+                    android:id="@+id/containerCheckedOut"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"/>
+
+            <!-- Secção: Histórico -->
+            <TextView
+                    android:id="@+id/txtHistoryTitle"
+                    android:text="Histórico de empréstimos"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"/>
+
+            <LinearLayout
+                    android:id="@+id/containerHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp"/>
+
+        </LinearLayout>
 
     </ScrollView>
 

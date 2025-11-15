@@ -77,8 +77,7 @@ public interface LibraryApi {
 
 
     @GET("user/checkout-history")
-
-    Call<List<BookItem>> getCheckoutHistory(@Query("username") String username);
+    Call<List<LibraryBook>> getCheckoutHistory(@Query("userId") String username);
 
 }
 
